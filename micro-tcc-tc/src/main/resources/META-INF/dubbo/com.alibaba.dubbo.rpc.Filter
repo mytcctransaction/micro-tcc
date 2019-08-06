@@ -1,0 +1,2 @@
+dubboProviderContextFilter=org.micro.tcc.tc.dubbo.filter.DubboProviderContextFilter
+dubboConsumerContextFilter=org.micro.tcc.tc.dubbo.filter.DubboConsumerContextFilter

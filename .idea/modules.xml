@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc.iml" filepath="$PROJECT_DIR$/micro-tcc.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-common/micro-tcc-common.iml" filepath="$PROJECT_DIR$/micro-tcc-common/micro-tcc-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-common/micro-tcc-demo-common.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-common/micro-tcc-demo-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-dubbo-service-a/micro-tcc-demo-dubbo-service-a.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-dubbo-service-a/micro-tcc-demo-dubbo-service-a.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-dubbo-service-b/micro-tcc-demo-dubbo-service-b.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-dubbo-service-b/micro-tcc-demo-dubbo-service-b.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-dubbo-service-c/micro-tcc-demo-dubbo-service-c.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-dubbo-service-c/micro-tcc-demo-dubbo-service-c.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-springcloud-service-a/micro-tcc-demo-springcloud-service-a.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-springcloud-service-a/micro-tcc-demo-springcloud-service-a.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-springcloud-service-b/micro-tcc-demo-springcloud-service-b.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-springcloud-service-b/micro-tcc-demo-springcloud-service-b.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-springcloud-service-b-b/micro-tcc-demo-springcloud-service-b-b.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-springcloud-service-b-b/micro-tcc-demo-springcloud-service-b-b.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-demo-springcloud-service-c/micro-tcc-demo-springcloud-service-c.iml" filepath="$PROJECT_DIR$/micro-tcc-demo-springcloud-service-c/micro-tcc-demo-springcloud-service-c.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-ek/micro-tcc-ek.iml" filepath="$PROJECT_DIR$/micro-tcc-ek/micro-tcc-ek.iml" />
+      <module fileurl="file://$PROJECT_DIR$/micro-tcc-tc/micro-tcc-tc.iml" filepath="$PROJECT_DIR$/micro-tcc-tc/micro-tcc-tc.iml" />
+    </modules>
+  </component>
+</project>

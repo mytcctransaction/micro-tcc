@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.1.2.RELEASE</version>
+        <relativePath/>
+    </parent>
+    <groupId>org.micro.tcc</groupId>
+    <artifactId>micro-tcc</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>micro-tcc</name>
+
+    <modules>
+        <module>micro-tcc-common</module>
+        <module>micro-tcc-demo-common</module>
+        <module>micro-tcc-tc</module>
+        <module>micro-tcc-demo-dubbo-service-a</module>
+        <module>micro-tcc-demo-dubbo-service-b</module>
+        <module>micro-tcc-demo-dubbo-service-c</module>
+
+        <module>micro-tcc-demo-springcloud-service-a</module>
+        <module>micro-tcc-demo-springcloud-service-b</module>
+		<module>micro-tcc-demo-springcloud-service-b-b</module>
+        <module>micro-tcc-demo-springcloud-service-c</module>
+
+
+    </modules>
+
+    <properties>
+        <!-- project -setting -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+
+        <springcloud.version>Greenwich.RELEASE</springcloud.version>
+        <!--<springcloud.version>Finchley.RELEASE</springcloud.version>-->
+        <lombok.version>1.18.0</lombok.version>
+    </properties>
+
+
+
+
+    <dependencies>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+    </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${springcloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.micro.tcc</groupId>
+                <artifactId>micro-tcc-common</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+
+
+        </dependencies>
+    </dependencyManagement>
+   <!-- <build>
+        <plugins>
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>3.5.0.1254</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+-->
+
+</project>
