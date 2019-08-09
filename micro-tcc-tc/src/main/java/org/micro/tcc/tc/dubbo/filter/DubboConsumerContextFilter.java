@@ -18,8 +18,8 @@ import org.micro.tcc.tc.component.TransactionManager;
 
 /**
 *@author jeff.liu
-*@desc   描述
-*@date 2019/8/5
+*   描述
+* date 2019/8/5
 */
 @Activate
 @Slf4j

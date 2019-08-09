@@ -15,8 +15,8 @@ import java.util.Collections;
 
 /**
  * @author jeff.liu
- * @desc
- * @date 2019/8/6 10:26
+ *
+ *  date 2019/8/6 10:26
  */
 @Configuration
 public class HttpAutoConfiguration {

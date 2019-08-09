@@ -7,31 +7,22 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="micro-tcc-common" />
-        <module name="micro-tcc-demo-common" />
-        <module name="micro-tcc-demo-dubbo-service-a" />
-        <module name="micro-tcc-demo-dubbo-service-b" />
-        <module name="micro-tcc-demo-dubbo-service-c" />
-        <module name="micro-tcc-demo-springcloud-service-a" />
-        <module name="micro-tcc-demo-springcloud-service-b" />
-        <module name="micro-tcc-demo-springcloud-service-b-b" />
-        <module name="micro-tcc-demo-springcloud-service-c" />
-        <module name="micro-tcc-ek" />
         <module name="micro-tcc-tc" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="micro-tcc" target="1.5" />
-      <module name="micro-tcc-common" target="1.5" />
-      <module name="micro-tcc-demo-common" target="1.5" />
-      <module name="micro-tcc-demo-dubbo-service-a" target="1.5" />
-      <module name="micro-tcc-demo-dubbo-service-b" target="1.5" />
-      <module name="micro-tcc-demo-dubbo-service-c" target="1.5" />
-      <module name="micro-tcc-demo-springcloud-service-a" target="1.5" />
-      <module name="micro-tcc-demo-springcloud-service-b" target="1.5" />
-      <module name="micro-tcc-demo-springcloud-service-b-b" target="1.5" />
-      <module name="micro-tcc-demo-springcloud-service-c" target="1.5" />
+      <module name="micro-tcc" target="1.8" />
+      <module name="micro-tcc-common" target="1.8" />
+      <module name="micro-tcc-demo-common" target="1.8" />
+      <module name="micro-tcc-demo-dubbo-service-a" target="1.8" />
+      <module name="micro-tcc-demo-dubbo-service-b" target="1.8" />
+      <module name="micro-tcc-demo-dubbo-service-c" target="1.8" />
+      <module name="micro-tcc-demo-springcloud-service-a" target="1.8" />
+      <module name="micro-tcc-demo-springcloud-service-b" target="1.8" />
+      <module name="micro-tcc-demo-springcloud-service-b-b" target="1.8" />
+      <module name="micro-tcc-demo-springcloud-service-c" target="1.8" />
       <module name="micro-tcc-ek" target="1.8" />
-      <module name="micro-tcc-tc" target="1.5" />
+      <module name="micro-tcc-tc" target="1.8" />
       <module name="microtcc" target="1.8" />
       <module name="txlcn-demo-tm" target="1.8" />
     </bytecodeTargetLevel>

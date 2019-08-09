@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 
 /**
  *@author jeff.liu
- *@desc   描述
- *@date 2019/7/31
+ *   描述
+ * date 2019/7/31
  */
 @Component
 @Aspect

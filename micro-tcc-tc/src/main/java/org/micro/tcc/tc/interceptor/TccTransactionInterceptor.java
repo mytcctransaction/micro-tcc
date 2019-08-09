@@ -14,8 +14,8 @@ import org.micro.tcc.tc.component.CoordinatorWatcher;
 
 /**
  *@author jeff.liu
- *@desc   描述
- *@date 2019/7/31
+ *   描述
+ * date 2019/7/31
  */
 @Component
 public class TccTransactionInterceptor {
@@ -64,17 +64,13 @@ public class TccTransactionInterceptor {
             try {
                 returnValue = tccMethodContext.proceed();
             } catch (Throwable tryingException) {
-                //if (!isDelayCancelException(tryingException, allDelayCancelExceptions)) {
-                    //logger.warn(String.format("compensable transaction trying failed. transaction content:%s", JSON.toJSONString(transaction)), tryingException);
-                    transaction.changeStatus(TransactionStatus.CANCEL);
-                    //主调用方失败，修改状态为cancel，次调用方需要全部回滚
-                    CoordinatorWatcher.modify(transaction);
-                    //transactionManager.rollback(asyncCancel);
-                //}
+
+                transaction.changeStatus(TransactionStatus.CANCEL);
+                //主调用方失败，修改状态为cancel，次调用方需要全部回滚
+                CoordinatorWatcher.modify(transaction);
                 throw tryingException;
             }
             try{
-                //transactionManager.commit(null,asyncConfirm);
                 transaction.changeStatus(TransactionStatus.CONFIRM);
                 CoordinatorWatcher.modify(transaction);
             }catch (Throwable t){

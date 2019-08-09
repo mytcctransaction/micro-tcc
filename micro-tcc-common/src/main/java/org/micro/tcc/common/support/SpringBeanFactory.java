@@ -9,8 +9,8 @@ import java.util.Map;
 
 /**
  *@author jeff.liu
- *@desc   描述
- *@date 2019/7/31
+ *   描述
+ * date 2019/7/31
  */
 @Component
 public class SpringBeanFactory implements BeanFactory, ApplicationContextAware {

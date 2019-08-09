@@ -14,8 +14,8 @@ import java.io.IOException;
 
 /**
  * @author jeff.liu
- * @desc
- * @date 2019/8/6 10:25
+ *
+ *  date 2019/8/6 10:25
  */
 @Slf4j
 public class RestTemplateIntercetor implements ClientHttpRequestInterceptor {

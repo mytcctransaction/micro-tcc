@@ -23,10 +23,10 @@ import org.springframework.boot.ApplicationRunner;
 import java.util.List;
 
 /**
- * @program: zookeeper-connection
- * @description: 提供的CuratorWatcher接口实现
- * @author: jeff.liu
- * @create: 2018-04-28 13:40
+ * zookeeper-connection
+ *  提供的CuratorWatcher接口实现
+ *  jeff.liu
+ *  2018-04-28 13:40
  **/
 @Slf4j
 public class CoordinatorWatcher implements ApplicationRunner {

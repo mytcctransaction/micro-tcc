@@ -18,8 +18,8 @@ import java.util.*;
 
 /**
  *@author jeff.liu
- *@desc   描述
- *@date 2019/7/31
+ *   描述
+ * date 2019/7/31
  */
 @Slf4j
 public class RedisSpringTransactionRepository implements TransactionRepository {
@@ -42,13 +42,19 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
         if(b)return 1;
         return 0;
     }
+    @Override
+    public List<Transaction> findAll(Date date) {
+        String key="";
+        String subKey="";
 
+        return null;
+    }
     public <T> List<T> sortPageList(String key,String subKey,String by,boolean isDesc,boolean isAlpha,int off,int num) throws  Exception{
         SortQueryBuilder<String> builder = SortQueryBuilder.sort(key);
-        builder.by(subKey+"*->"+by);
-        builder.get("#");
+        //builder.by(subKey+"*->"+by);
+        //builder.get("#");
         //将按照字幕顺序进行排序
-        builder.alphabetical(isAlpha);
+        //builder.alphabetical(isAlpha);
         if(isDesc)
             builder.order(SortParameters.Order.DESC);
         builder.limit(off, num);
@@ -86,7 +92,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     @Override
     public int delete(Transaction transaction) {
         //Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
-        redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
+        //redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
         return converResult(true);
     }
 
@@ -111,8 +117,5 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
         }
     }
 
-    @Override
-    public List<Transaction> findAll(Date date) {
-        return null;
-    }
+
 }

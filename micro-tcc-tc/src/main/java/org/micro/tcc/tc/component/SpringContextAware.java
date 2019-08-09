@@ -12,7 +12,7 @@ import java.util.Map;
  * 资源文件读取工具
  *
  * @author jeff.liu
- * @date 2016年10月15日
+ *  date 2016年10月15日
  */
 @Configuration
 @Order(0)
@@ -32,7 +32,7 @@ public class SpringContextAware implements ApplicationContextAware {
 	/**
 	 * 根据名称获取bean
 	 * @param beanName
-	 * @return
+	 *
 	 */
 	public static Object getBean(String beanName) {
 		if(context==null)return null;
@@ -51,7 +51,7 @@ public class SpringContextAware implements ApplicationContextAware {
 	/**
 	 * 根据类型获取bean
 	 * @param clazz
-	 * @return
+	 *
 	 */
 	public static <T> T getBean(Class<T> clazz) {
 		if(context==null)return null;
@@ -66,7 +66,7 @@ public class SpringContextAware implements ApplicationContextAware {
 	/**
 	 * 是否包含bean
 	 * @param beanName
-	 * @return
+	 *
 	 */
 	public static boolean containsBean(String beanName) {
 		if(context==null)return false;
@@ -76,7 +76,7 @@ public class SpringContextAware implements ApplicationContextAware {
 	/**
 	 * 是否是单例
 	 * @param beanName
-	 * @return
+	 *
 	 */
 	public static boolean isSingleton(String beanName) {
 		return context.isSingleton(beanName);
@@ -85,7 +85,7 @@ public class SpringContextAware implements ApplicationContextAware {
 	/**
 	 * bean的类型
 	 * @param beanName
-	 * @return
+	 *
 	 */
 	public static Class getType(String beanName) {
 		return context.getType(beanName);

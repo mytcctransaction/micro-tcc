@@ -4,8 +4,8 @@ import java.util.Set;
 
 /**
  *@author jeff.liu
- *@desc   描述
- *@date 2019/7/31
+ *   描述
+ * date 2019/7/31
  */
 public interface RecoverConfig {
 
@@ -15,9 +15,7 @@ public interface RecoverConfig {
 
     public String getCronExpression();
 
-    public Set<Class<? extends Exception>> getDelayCancelExceptions();
 
-    public void setDelayCancelExceptions(Set<Class<? extends Exception>> delayRecoverExceptions);
 
-    public int getAsyncTerminateThreadPoolSize();
+
 }

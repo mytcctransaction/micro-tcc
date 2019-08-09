@@ -11,8 +11,8 @@ import java.util.List;
 
 /**
 *@author jeff.liu
-*@desc   描述
-*@date 2019/8/6
+*   描述
+* date 2019/8/6
 */
 public class MicroTccSpringSelector implements ImportSelector, BeanFactoryAware {
     private BeanFactory beanFactory;
