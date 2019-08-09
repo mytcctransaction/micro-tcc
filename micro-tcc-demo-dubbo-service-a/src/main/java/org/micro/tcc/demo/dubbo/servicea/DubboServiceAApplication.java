@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
  *@date 2019/8/6
  */
 @Configuration
-@SpringBootApplication(/*scanBasePackages={"org.micro.tcc.**"}*/)
+@SpringBootApplication
 @EnableMicroTccTransaction
 public class DubboServiceAApplication {
 

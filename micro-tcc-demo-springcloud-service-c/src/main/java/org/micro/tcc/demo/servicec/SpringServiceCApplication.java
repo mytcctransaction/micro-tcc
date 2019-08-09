@@ -12,7 +12,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  *@desc   描述
  *@date 2019/7/31
  */
-@SpringBootApplication(/*scanBasePackages={"org.micro.tcc.**"}*/)
+@SpringBootApplication
 @EnableDiscoveryClient
 @EnableMicroTccTransaction
 public class SpringServiceCApplication {

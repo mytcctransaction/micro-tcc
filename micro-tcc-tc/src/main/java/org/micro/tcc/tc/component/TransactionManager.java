@@ -51,8 +51,6 @@ public class TransactionManager {
             transactionRepository= RedisSpringTransactionRepository.getInstance();
         }
 
-        //transactionManager.setTransactionRepository(transactionRepository);
-
         if (executorService == null) {
 
             synchronized (TransactionManager.class) {

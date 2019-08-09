@@ -5,11 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
 
 
-    <parent>
+<!--    <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.1.2.RELEASE</version>
         <relativePath/>
+    </parent>-->
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>7</version>
     </parent>
     <groupId>org.micro.tcc</groupId>
     <artifactId>micro-tcc</artifactId>
@@ -45,6 +50,27 @@
     </properties>
 
 
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <!--写你自己的，这只是个例子-->
+    <scm>
+        <url>https://github.com/mytcctransaction/micro-tcc</url>
+        <connection>https://github.com/mytcctransaction/micro-tcc.git</connection>
+        <developerConnection>https://github.com/mytcctransaction/micro-tcc</developerConnection>
+    </scm>
+    <!--写你自己的，这只是个例子-->
+    <developers>
+        <developer>
+            <name>liuzhijian</name>
+            <email>reasonsoft@163.com</email>
+            <url>https://github.com/mytcctransaction/micro-tcc</url>
+        </developer>
+    </developers>
 
 
     <dependencies>
@@ -56,7 +82,14 @@
 
     <dependencyManagement>
         <dependencies>
-
+            <dependency>
+                <!-- Import dependency management from Spring Boot -->
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>2.1.1.RELEASE</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>

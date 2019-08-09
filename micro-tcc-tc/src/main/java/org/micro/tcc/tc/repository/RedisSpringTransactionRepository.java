@@ -47,6 +47,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
         SortQueryBuilder<String> builder = SortQueryBuilder.sort(key);
         builder.by(subKey+"*->"+by);
         builder.get("#");
+        //将按照字幕顺序进行排序
         builder.alphabetical(isAlpha);
         if(isDesc)
             builder.order(SortParameters.Order.DESC);
