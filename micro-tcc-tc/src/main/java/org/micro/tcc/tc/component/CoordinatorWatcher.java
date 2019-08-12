@@ -162,7 +162,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
             }
 
         }catch (Throwable t){
-            log.error("分布式协管理器发生错误：",t);
+            log.error("TCC:分布式协管理器发生错误：",t);
         }
     }
 

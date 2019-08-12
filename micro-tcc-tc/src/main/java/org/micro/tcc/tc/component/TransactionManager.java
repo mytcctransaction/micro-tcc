@@ -107,8 +107,8 @@ public class TransactionManager {
             registerTransaction(transaction);
             return transaction;
         } else {
-            log.error("******************transaction is null**** at propagationExistStart*************");
-            throw new NoExistedTransactionException("group id 不存在！");
+
+            throw new NoExistedTransactionException("TCC:Group id 不存在！");
         }
     }
     public boolean isExitGlobalTransaction(String groupId){
@@ -154,9 +154,8 @@ public class TransactionManager {
                         commitTransaction(transaction);
                     }
                 });
-                logger.debug("async submit cost time:" + (System.currentTimeMillis() - statTime));
+
             } catch (Throwable commitException) {
-                logger.warn("TCC transaction async submit confirm failed, recovery job will try to confirm later.", commitException);
                 throw new ConfirmException(commitException);
             }
         } else {
@@ -190,7 +189,7 @@ public class TransactionManager {
                     }
                 });
             } catch (Throwable rollbackException) {
-                logger.warn("transaction async rollback failed, recovery job will try to rollback later.", rollbackException);
+                logger.warn("TCC:transaction async rollback failed, recovery job will try to rollback later.", rollbackException);
                 throw new CancelException(rollbackException);
             }
         } else {
@@ -205,7 +204,7 @@ public class TransactionManager {
             transaction.commit();
             transactionRepository.delete(transaction);
         } catch (Throwable commitException) {
-            logger.warn(" transaction confirm failed, recovery job will try to confirm later.", commitException);
+            logger.warn("TCC: transaction confirm failed.", commitException);
             throw new ConfirmException(commitException);
         }
     }
@@ -215,7 +214,7 @@ public class TransactionManager {
             transaction.rollback();
             transactionRepository.delete(transaction);
         } catch (Throwable rollbackException) {
-            logger.warn(" transaction rollback failed, recovery job will try to rollback later.", rollbackException);
+            logger.warn("TCC: transaction rollback failed.", rollbackException);
             //throw new CancelException(rollbackException);
         }
     }

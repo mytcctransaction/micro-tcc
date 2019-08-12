@@ -11,4 +11,5 @@
 ## The Authority
 Website: [https://github.com/mytcctransaction/micro-tcc](https://github.com/mytcctransaction/micro-tcc)  
 Statistics: [Leave your company messages](https://github.com/mytcctransaction/micro-tcc)  
-QQ：306750639 (Hot) 
+QQ Group：246539015 (Hot) 
+Author QQ:306750639

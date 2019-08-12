@@ -22,16 +22,13 @@ public class TransactionRecovery {
 
 
     public void beginRecover() {
-
-        log.info("TCC:准备进行事务恢复");
+        log.debug("TCC:准备进行事务恢复");
         List<Transaction> transactions = loadExceptionTransactions();
         if(null!=transactions) recoverExceptionTransactions(transactions);
-        log.info("TCC:事务恢复成功结束");
+        log.debug("TCC:事务恢复成功结束");
     }
 
     private List<Transaction> loadExceptionTransactions() {
-
-
         long currentTimeInMillis = Calendar.getInstance().getTimeInMillis();
 
         TransactionRepository transactionRepository = RedisSpringTransactionRepository.getInstance();
@@ -50,20 +47,21 @@ public class TransactionRecovery {
                 log.error(String.format("TCC:recover failed with max retry count,will not try again. txid:%s, status:%s,retried count:%d,transaction content:%s", transaction.getTransactionXid(), transaction.getStatus().value(), transaction.getRetriedCount(), JSON.toJSONString(transaction)));
                 continue;
             }
-
+            if (TransactionRecoverConfig.getInstance().getMaxRetryCount()>5 && (transaction.getCreateTime().getTime() +
+                    TransactionRecoverConfig.getInstance().getMaxRetryCount() *
+                            TransactionRecoverConfig.getInstance().getRecoverDuration() > System.currentTimeMillis())){
+                continue;
+            }
 
             try {
                 transaction.addRetriedCount();
                 if (transaction.getStatus().equals(TransactionStatus.CONFIRM)) {
-
                     //transaction.changeStatus(TransactionStatus.CONFIRM);
                     transactionRepository.update(transaction);
                     transaction.commit();
                     transactionRepository.delete(transaction);
 
-                } else if (transaction.getStatus().equals(TransactionStatus.CANCEL)
-                        || transaction.getTransactionType().equals(TransactionType.ROOT)) {
-
+                } else if (transaction.getStatus().equals(TransactionStatus.CANCEL)) {
                     //transaction.changeStatus(TransactionStatus.CANCEL);
                     transactionRepository.update(transaction);
                     transaction.rollback();

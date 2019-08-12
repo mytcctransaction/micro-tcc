@@ -10,10 +10,13 @@ import org.micro.tcc.common.serializer.KryoPoolSerializer;
 import org.micro.tcc.common.serializer.ObjectSerializer;
 import org.micro.tcc.tc.util.TransactionSerializer;
 import org.springframework.data.redis.connection.SortParameters;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.query.SortQueryBuilder;
 import org.micro.tcc.tc.component.SpringContextAware;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -29,6 +32,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
 
     public static RedisSpringTransactionRepository redisSpringTransactionRepository=new RedisSpringTransactionRepository();
 
+    private int reCoverCount=1000;
     public static RedisSpringTransactionRepository getInstance(){
         return redisSpringTransactionRepository;
     }
@@ -44,27 +48,34 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     }
     @Override
     public List<Transaction> findAll(Date date) {
-        String key="";
-        String subKey="";
-
-        return null;
+        return pageList(Constant.getTransactionMapKey());
     }
-    public <T> List<T> sortPageList(String key,String subKey,String by,boolean isDesc,boolean isAlpha,int off,int num) throws  Exception{
-        SortQueryBuilder<String> builder = SortQueryBuilder.sort(key);
-        //builder.by(subKey+"*->"+by);
-        //builder.get("#");
-        //将按照字幕顺序进行排序
-        //builder.alphabetical(isAlpha);
-        if(isDesc)
-            builder.order(SortParameters.Order.DESC);
-        builder.limit(off, num);
-        List<String> cks = redisTemplate.sort(builder.build());
-        List<T> result = new ArrayList<T>();
-        for (String ck : cks) {
-            //得到项目对象 by(subKey+ck);
+    public List<Transaction> pageList(String key) {
+        List<Transaction> list=new ArrayList();
+        Cursor<Map.Entry<String, Map<byte[], byte[]>>> cursor=null;
+        try{
+            cursor = redisTemplate.opsForHash().scan(key, ScanOptions.scanOptions().match("*").count(reCoverCount).build());
+            while (cursor.hasNext()) {
+                Map.Entry<String, Map<byte[], byte[]>> next= cursor.next();
+                Map<byte[], byte[]> value = next.getValue();
+                Transaction transaction= TransactionSerializer.deserialize(serializer,value);
+                list.add(transaction);
+            }
+        }catch (Throwable e){
+            log.error("TCC:redis 游标操作异常",e);
+        }finally{
+            if(null!=cursor){
+                try {
+                    cursor.close();
+                } catch (IOException e) {
+                    log.error(e.getMessage(),e);
+                }
+            }
+
         }
 
-        return result;
+        return list;
+
     }
     private String getTransactionXid(Transaction transaction){
         String transactionXid=transaction.getTransactionXid().getGlobalTccTransactionId();

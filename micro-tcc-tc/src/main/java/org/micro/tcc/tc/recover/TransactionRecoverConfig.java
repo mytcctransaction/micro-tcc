@@ -13,7 +13,8 @@ public class TransactionRecoverConfig implements RecoverConfig {
 
     private int maxRetryCount = 30;
 
-    private int recoverDuration = 160; //160 seconds
+    //160 秒
+    private int recoverDuration = 160;
 
     private String cronExpression = "0 */1 * * * ?";
 
