@@ -33,7 +33,7 @@ public class TransactionRecovery {
 
         TransactionRepository transactionRepository = RedisSpringTransactionRepository.getInstance();
 
-        return transactionRepository.findAll(new Date(currentTimeInMillis - 1 * 1000));
+        return transactionRepository.findAll(new Date(currentTimeInMillis));
 
     }
 

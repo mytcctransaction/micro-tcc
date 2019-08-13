@@ -37,7 +37,7 @@ public class TccCoordinatorInterceptor {
 
             switch (transaction.getStatus()) {
                 case TRY:
-                    enlistParticipant(pjp);
+                    addingParticipants(pjp);
                     break;
                 case CONFIRM:
                     break;
@@ -49,13 +49,13 @@ public class TccCoordinatorInterceptor {
         return pjp.proceed(pjp.getArgs());
     }
 
-    private void enlistParticipant(ProceedingJoinPoint pjp) throws IllegalAccessException, InstantiationException {
+    private void addingParticipants(ProceedingJoinPoint pjp) throws IllegalAccessException, InstantiationException {
 
         Method method = ReflectionUtils.getTccTransactionMethod(pjp);
         if (method == null) {
             throw new RuntimeException(String.format("join point not found method, point is : %s", pjp.getSignature().getName()));
         }
-       TccTransaction tccTransaction = method.getAnnotation(TccTransaction.class);
+        TccTransaction tccTransaction = method.getAnnotation(TccTransaction.class);
 
         String confirmMethodName = tccTransaction.confirmMethod();
         String cancelMethodName = tccTransaction.cancelMethod();
@@ -64,15 +64,10 @@ public class TccCoordinatorInterceptor {
         TransactionGid xid = new TransactionGid(transaction.getTransactionXid().getGlobalTccTransactionId());
         
         Class targetClass = ReflectionUtils.getDeclaringType(pjp.getTarget().getClass(), method.getName(), method.getParameterTypes());
-        Invocation confirmInvocation = new Invocation(targetClass,
-                confirmMethodName,
-                method.getParameterTypes(), pjp.getArgs());
-
+        Invocation confirmInvocation = new Invocation(targetClass, confirmMethodName, method.getParameterTypes(), pjp.getArgs());
         Invocation cancelInvocation = new Invocation(targetClass, cancelMethodName, method.getParameterTypes(), pjp.getArgs());
-
         TransactionMember participant = new TransactionMember(xid, confirmInvocation, cancelInvocation);
-
-        transactionManager.enlistParticipant(participant);
+        transactionManager.addingParticipants(participant);
 
     }
 

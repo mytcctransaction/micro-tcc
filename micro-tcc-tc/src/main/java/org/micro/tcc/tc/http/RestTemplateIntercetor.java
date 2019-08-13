@@ -22,7 +22,7 @@ public class RestTemplateIntercetor implements ClientHttpRequestInterceptor {
 
     @Override
     public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes, ClientHttpRequestExecution clientHttpRequestExecution) throws IOException {
-        log.info("TCC: RestTemplateIntercetor begin");
+        log.info("TCC: RestTemplateIntercetor ");
         Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();
         if(null==transaction)return clientHttpRequestExecution.execute(httpRequest,bytes);
         String groupId = transaction.getTransactionXid().getGlobalTccTransactionId();

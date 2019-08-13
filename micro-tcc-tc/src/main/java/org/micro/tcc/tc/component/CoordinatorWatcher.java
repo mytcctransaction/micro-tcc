@@ -87,18 +87,18 @@ public class CoordinatorWatcher implements ApplicationRunner {
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {  // 添加子节点时触发
 
                     log.info("TCC:zk子节点：" + event.getData().getPath() + " 添加成功，");
-                    log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
+                    //log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
                     //process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_REMOVED)) {  // 删除子节点时触发
 
                     log.info("TCC:zk子节点：" + event.getData().getPath() + " 删除成功，");
-                    log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
+                    //log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
                     process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
 
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_UPDATED)) {  // 修改子节点数据时触发
 
                     log.info("TCC:zk子节点：" + event.getData().getPath() + " 数据更新成功，");
-                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 新的数据为：" + new String(event.getData().getData()));
+                    //log.info("TCC:zk子节点：" + event.getData().getPath() + " 新的数据为：" + new String(event.getData().getData()));
                     process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
                 }
             }

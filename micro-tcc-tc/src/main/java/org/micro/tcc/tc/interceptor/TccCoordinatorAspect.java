@@ -28,7 +28,7 @@ public  class TccCoordinatorAspect {
 
     @Around("transactionContextCall()")
     public Object interceptTransactionContextMethod(ProceedingJoinPoint pjp) throws Throwable {
-        log.info("TCC:CoordinatorAspect begin");
+        log.info("TCC:CoordinatorAspect ");
         if(null== tccCoordinatorInterceptor) tccCoordinatorInterceptor =new TccCoordinatorInterceptor();
         return tccCoordinatorInterceptor.interceptTransactionContextMethod(pjp);
     }

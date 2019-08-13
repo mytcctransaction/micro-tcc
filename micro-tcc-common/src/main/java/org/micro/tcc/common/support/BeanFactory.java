@@ -6,7 +6,7 @@ package org.micro.tcc.common.support;
  * date 2019/7/31
  */
 public interface BeanFactory {
-    <T> T getBean(Class<T> var1);
+    <T> T getBean(Class<T> val);
 
-    <T> boolean isFactoryOf(Class<T> clazz);
+    <T> boolean isFactoryBean(Class<T> clazz);
 }

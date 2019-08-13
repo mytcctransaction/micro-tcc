@@ -27,7 +27,7 @@ public class DubboConsumerContextFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        log.info("TCC: Consumer filter begin");
+        log.info("TCC: Consumer filter ");
         Map<String, String> context = new HashMap<>();
         //处理group id
         Transaction transaction=TransactionManager.getInstance().getCurrentTransaction();

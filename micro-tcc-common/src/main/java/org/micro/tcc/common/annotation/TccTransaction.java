@@ -18,7 +18,7 @@ public @interface TccTransaction {
 
     public String cancelMethod() default "";
 
-    public Class<? extends Exception>[] delayCancelExceptions() default {};
+    public boolean asyncTransaction() default false;
 
     public boolean asyncConfirm() default false;
 

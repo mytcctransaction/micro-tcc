@@ -76,7 +76,7 @@ public class MicroTccSpringConfig {
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            log.info("TCC:Feign interceptor begin");
+            log.info("TCC:Feign interceptor ");
             Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();
             if(null==transaction)return;
             String gid = transaction.getTransactionXid().getGlobalTccTransactionId();

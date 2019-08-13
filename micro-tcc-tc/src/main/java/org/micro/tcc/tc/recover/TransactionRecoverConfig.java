@@ -1,21 +1,21 @@
 package org.micro.tcc.tc.recover;
 
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-import java.net.SocketTimeoutException;
-import java.util.HashSet;
-import java.util.Set;
-
-
+@Component
 public class TransactionRecoverConfig implements RecoverConfig {
 
     public static final TransactionRecoverConfig INSTANCE = new TransactionRecoverConfig();
 
+    @Value("${transaction.recover.maxRetryCount}")
     private int maxRetryCount = 30;
 
     //160 秒
+    @Value("${transaction.recover.recoverDuration}")
     private int recoverDuration = 160;
-
+    @Value("${transaction.recover.cronExpression}")
     private String cronExpression = "0 */1 * * * ?";
 
     public static TransactionRecoverConfig getInstance(){

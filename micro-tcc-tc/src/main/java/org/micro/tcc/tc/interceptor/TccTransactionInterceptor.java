@@ -30,7 +30,7 @@ public class TccTransactionInterceptor {
         this.transactionManager = transactionManager;
     }
 
-    public Object interceptCompensableMethod(ProceedingJoinPoint pjp) throws Throwable {
+    public Object interceptTransactionMethod(ProceedingJoinPoint pjp) throws Throwable {
 
         TccMethodContext tccMethodContext = new TccMethodContext(pjp);
         //获取feign传输过来的gid

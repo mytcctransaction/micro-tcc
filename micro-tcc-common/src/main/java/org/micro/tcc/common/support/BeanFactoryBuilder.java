@@ -25,7 +25,7 @@ public final class BeanFactoryBuilder {
         if (!classFactoryMap.containsKey(clazz)) {
 
             for (BeanFactory beanFactory : beanFactories) {
-                if (beanFactory.isFactoryOf(clazz)) {
+                if (beanFactory.isFactoryBean(clazz)) {
                     //从spring bean容器取出
                     classFactoryMap.putIfAbsent(clazz, new SingeltonFactory<T>(clazz, beanFactory.getBean(clazz)));
                 }

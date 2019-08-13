@@ -267,9 +267,9 @@ public class TransactionManager {
 
     }
 
-    public void enlistParticipant(TransactionMember participant) {
+    public void addingParticipants(TransactionMember participant) {
         Transaction transaction = this.getCurrentTransaction();
-        transaction.enlistParticipant(participant);
+        transaction.addingParticipants(participant);
         transactionRepository.update(transaction);
     }
 }

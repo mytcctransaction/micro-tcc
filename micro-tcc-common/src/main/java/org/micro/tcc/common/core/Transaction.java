@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Transaction implements Serializable {
 
-
     private static final long serialVersionUID = 776032890445193092L;
+
     private String asyncConfirm="false";
 
     private String asyncCancel="false";
@@ -62,14 +62,10 @@ public class Transaction implements Serializable {
         this.transactionType = transactionType;
     }
 
-    public void enlistParticipant(TransactionMember participant) {
+    public void addingParticipants(TransactionMember participant) {
         participants.add(participant);
     }
 
-
-//    public Xid getXid() {
-//        return xid.clone();
-//    }
 
     public TransactionGid getTransactionXid() {
         return xid;

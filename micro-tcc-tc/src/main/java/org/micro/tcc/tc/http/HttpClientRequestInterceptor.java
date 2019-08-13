@@ -25,7 +25,7 @@ public class HttpClientRequestInterceptor implements HttpRequestInterceptor {
 
     @Override
     public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
-        log.info("TCC:HttpClientRequestInterceptor begin");
+        log.info("TCC:HttpClientRequestInterceptor ");
         HttpCoreContext adapt = HttpCoreContext.adapt(httpContext);
         HttpHost targetHost = adapt.getTargetHost();
         Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();

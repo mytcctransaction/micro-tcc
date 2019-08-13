@@ -28,7 +28,7 @@ public class WebControllerAspect extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         try{
-            log.info("TCC:WebControllerAspect begin");
+            log.info("TCC:WebControllerAspect ");
             Enumeration<String> headerNames = request.getHeaderNames();
             Transaction transaction=new Transaction(TransactionType.BRANCH);
             int count=0;

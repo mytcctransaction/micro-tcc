@@ -103,7 +103,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     @Override
     public int delete(Transaction transaction) {
         //Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
-        //redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
+        redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
         return converResult(true);
     }
 

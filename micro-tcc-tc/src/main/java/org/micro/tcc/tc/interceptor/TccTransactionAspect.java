@@ -29,15 +29,14 @@ public  class TccTransactionAspect {
     }
 
     @Pointcut("@annotation(org.micro.tcc.common.annotation.TccTransaction)")
-    public void compensableService() {
+    public void transactionMethod() {
 
     }
 
-    @Around("compensableService()")
-    public Object interceptCompensableMethod(ProceedingJoinPoint pjp) throws Throwable {
-        log.info("TCC:TransactionAspect begin");
-       // if(compensableTransactionInterceptor==null)compensableTransactionInterceptor=new CompensableTransactionInterceptor();
-        return tccTransactionInterceptor.interceptCompensableMethod(pjp);
+    @Around("transactionMethod()")
+    public Object interceptTransactionMethod(ProceedingJoinPoint pjp) throws Throwable {
+        log.info("TCC:TransactionAspect ");
+        return tccTransactionInterceptor.interceptTransactionMethod(pjp);
     }
 
 

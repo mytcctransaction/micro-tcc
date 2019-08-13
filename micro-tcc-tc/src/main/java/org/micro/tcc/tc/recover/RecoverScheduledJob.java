@@ -1,6 +1,7 @@
 package org.micro.tcc.tc.recover;
 
 import lombok.extern.slf4j.Slf4j;
+import org.micro.tcc.tc.component.SpringContextAware;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -22,6 +23,7 @@ public class RecoverScheduledJob implements ApplicationRunner {
     public void init() {
 
         try {
+            TransactionRecoverConfig transactionConfigurator= SpringContextAware.getBean(TransactionRecoverConfig.class);
             MethodInvokingJobDetailFactoryBean jobDetail = new MethodInvokingJobDetailFactoryBean();
             jobDetail.setTargetObject(transactionRecovery);
             jobDetail.setTargetMethod("beginRecover");

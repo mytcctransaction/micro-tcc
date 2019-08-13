@@ -11,11 +11,8 @@ public class TransactionGid implements Serializable {
 
 
     private static final long serialVersionUID = 5549076002296308508L;
-    private int formatId = 1;
 
     private String globalTccTransactionId;
-
-
 
 
     /**
