@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class TransactionGid implements Serializable {
+public class TransactionXid implements Serializable {
 
 
     private static final long serialVersionUID = 5549076002296308508L;
@@ -18,7 +18,7 @@ public class TransactionGid implements Serializable {
     /**
      * 生成全局唯一id
      */
-    public TransactionGid() {
+    public TransactionXid() {
         String gid=UUID.randomUUID().toString();
         globalTccTransactionId=gid;
 
@@ -32,7 +32,7 @@ public class TransactionGid implements Serializable {
     }
 
 
-    public TransactionGid(Object uniqueIdentity) {
+    public TransactionXid(Object uniqueIdentity) {
         UUID branchUuid = null;
         if (uniqueIdentity instanceof UUID) {
             branchUuid = (UUID) uniqueIdentity;
@@ -55,11 +55,11 @@ public class TransactionGid implements Serializable {
     }
 
 
-    public TransactionGid(String globalTransactionId) {
+    public TransactionXid(String globalTransactionId) {
         this.globalTccTransactionId = globalTransactionId;
 
     }
-    public TransactionGid(String globalTransactionId, byte[] branchQualifier) {
+    public TransactionXid(String globalTransactionId, byte[] branchQualifier) {
         this.globalTccTransactionId = globalTransactionId;
 
     }

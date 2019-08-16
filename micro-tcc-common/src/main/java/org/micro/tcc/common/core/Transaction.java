@@ -21,7 +21,7 @@ public class Transaction implements Serializable {
 
     private String asyncCancel="false";
 
-    private TransactionGid xid;
+    private TransactionXid xid;
 
     private TransactionStatus status;
 
@@ -50,14 +50,14 @@ public class Transaction implements Serializable {
     }
 
     public Transaction(TransactionType transactionType) {
-        this.xid = new TransactionGid();
+        this.xid = new TransactionXid();
         this.status = TransactionStatus.TRY;
         this.transactionType = transactionType;
     }
 
     public Transaction(Object uniqueIdentity,TransactionType transactionType) {
 
-        this.xid = new TransactionGid(uniqueIdentity);
+        this.xid = new TransactionXid(uniqueIdentity);
         this.status = TransactionStatus.TRY;
         this.transactionType = transactionType;
     }
@@ -67,7 +67,7 @@ public class Transaction implements Serializable {
     }
 
 
-    public TransactionGid getTransactionXid() {
+    public TransactionXid getTransactionXid() {
         return xid;
     }
     public TransactionStatus getStatus() {

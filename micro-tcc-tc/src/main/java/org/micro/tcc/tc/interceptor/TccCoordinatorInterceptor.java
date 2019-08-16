@@ -1,10 +1,9 @@
 package org.micro.tcc.tc.interceptor;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.micro.tcc.common.annotation.TccTransaction;
-import org.micro.tcc.common.core.TransactionGid;
+import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.core.Invocation;
 import org.micro.tcc.common.core.TransactionMember;
 import org.micro.tcc.common.core.Transaction;
@@ -61,7 +60,7 @@ public class TccCoordinatorInterceptor {
         String cancelMethodName = tccTransaction.cancelMethod();
 
         Transaction transaction = transactionManager.getCurrentTransaction();
-        TransactionGid xid = new TransactionGid(transaction.getTransactionXid().getGlobalTccTransactionId());
+        TransactionXid xid = new TransactionXid(transaction.getTransactionXid().getGlobalTccTransactionId());
         
         Class targetClass = ReflectionUtils.getDeclaringType(pjp.getTarget().getClass(), method.getName(), method.getParameterTypes());
         Invocation confirmInvocation = new Invocation(targetClass, confirmMethodName, method.getParameterTypes(), pjp.getArgs());

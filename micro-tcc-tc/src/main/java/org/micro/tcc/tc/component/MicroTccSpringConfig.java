@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpRequestInterceptor;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.core.Transaction;
-import org.micro.tcc.common.core.TransactionGid;
 import org.micro.tcc.tc.http.HttpClientRequestInterceptor;
 import org.micro.tcc.tc.http.RestTemplateIntercetor;
 import org.micro.tcc.tc.recover.RecoverScheduledJob;

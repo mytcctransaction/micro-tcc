@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.core.TransactionRepository;
-import org.micro.tcc.common.core.TransactionGid;
+import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.exception.TransactionIOStreamException;
 import org.micro.tcc.common.serializer.KryoPoolSerializer;
 import org.micro.tcc.common.serializer.ObjectSerializer;
@@ -150,7 +150,7 @@ public class JdbcTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public Transaction findByGroupId(TransactionGid xid) {
+    public Transaction findByGroupId(TransactionXid xid) {
         return null;
     }
 

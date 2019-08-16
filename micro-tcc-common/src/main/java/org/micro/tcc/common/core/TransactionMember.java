@@ -10,7 +10,7 @@ public class TransactionMember implements Serializable {
 
 
     private static final long serialVersionUID = 3284377143420086541L;
-    private TransactionGid xid;
+    private TransactionXid xid;
 
     private Invocation confirmInvocation;
 
@@ -23,7 +23,7 @@ public class TransactionMember implements Serializable {
 
     }
 
-    public TransactionMember(TransactionGid xid, Invocation confirmInvocation, Invocation cancelInvocation) {
+    public TransactionMember(TransactionXid xid, Invocation confirmInvocation, Invocation cancelInvocation) {
         this.xid = xid;
         this.confirmInvocation = confirmInvocation;
         this.cancelInvocation = cancelInvocation;
@@ -36,7 +36,7 @@ public class TransactionMember implements Serializable {
 
     }
 
-    public void setXid(TransactionGid xid) {
+    public void setXid(TransactionXid xid) {
         this.xid = xid;
     }
 
@@ -52,7 +52,7 @@ public class TransactionMember implements Serializable {
         return methodReflect;
     }
 
-    public TransactionGid getXid() {
+    public TransactionXid getXid() {
         return xid;
     }
 

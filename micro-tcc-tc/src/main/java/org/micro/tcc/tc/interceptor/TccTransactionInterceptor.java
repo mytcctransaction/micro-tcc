@@ -36,7 +36,9 @@ public class TccTransactionInterceptor {
         //获取feign传输过来的gid
         Transaction transaction= TransactionManager.getInstance().getCurrentTransaction();
         boolean isTransactionActive=false;
-        if(null!=transaction)isTransactionActive=true;
+        if(null!=transaction){
+            isTransactionActive=true;
+        }
         switch (tccMethodContext.getMethodRole(isTransactionActive)) {
             case ROOT:
                 return processRoot(tccMethodContext);
@@ -94,6 +96,7 @@ public class TccTransactionInterceptor {
             switch (TransactionStatus.valueOf(tccMethodContext.getTransactionContext().getStatus())) {
                 case TRY:
                     transaction = transactionManager.propagationSupportsStart(tccMethodContext.getTransactionContext());
+                    CoordinatorWatcher.add(transaction);
                     try {
                         returnObj= tccMethodContext.proceed();
                     }catch (Throwable t){
@@ -109,6 +112,8 @@ public class TccTransactionInterceptor {
                     break;
                 case CANCEL:
 
+                    break;
+                default:
                     break;
             }
 

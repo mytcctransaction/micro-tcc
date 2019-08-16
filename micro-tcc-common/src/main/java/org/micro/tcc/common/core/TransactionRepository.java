@@ -13,7 +13,7 @@ public interface TransactionRepository {
 
     int delete(Transaction transaction);
 
-    Transaction findByGroupId(TransactionGid xid);
+    Transaction findByGroupId(TransactionXid xid);
 
     Transaction findByGroupId(String gid);
 

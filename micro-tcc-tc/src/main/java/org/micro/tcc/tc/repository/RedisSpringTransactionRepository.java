@@ -1,19 +1,16 @@
 package org.micro.tcc.tc.repository;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.core.TransactionRepository;
-import org.micro.tcc.common.core.TransactionGid;
+import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.serializer.KryoPoolSerializer;
 import org.micro.tcc.common.serializer.ObjectSerializer;
 import org.micro.tcc.tc.util.TransactionSerializer;
-import org.springframework.data.redis.connection.SortParameters;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
-import org.springframework.data.redis.core.query.SortQueryBuilder;
 import org.micro.tcc.tc.component.SpringContextAware;
 
 import java.io.IOException;
@@ -108,7 +105,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public Transaction findByGroupId(TransactionGid xid) {
+    public Transaction findByGroupId(TransactionXid xid) {
         //String transactionXid=UUID.nameUUIDFromBytes(xid.getGlobalTransactionId()).toString();
         String transactionXid=xid.getGlobalTccTransactionId();
         Map<byte[], byte[]> transMap=(Map<byte[], byte[]>)redisTemplate.opsForHash().get(Constant.getTransactionMapKey(),transactionXid);

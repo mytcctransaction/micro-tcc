@@ -9,7 +9,7 @@ public class TccTransactionContext implements Serializable {
 
 
     private static final long serialVersionUID = -5483706013898190522L;
-    private TransactionGid xid;
+    private TransactionXid xid;
 
     private int status;
 
@@ -19,16 +19,16 @@ public class TccTransactionContext implements Serializable {
 
     }
 
-    public TccTransactionContext(TransactionGid xid, int status) {
+    public TccTransactionContext(TransactionXid xid, int status) {
         this.xid = xid;
         this.status = status;
     }
 
-    public void setXid(TransactionGid xid) {
+    public void setXid(TransactionXid xid) {
         this.xid = xid;
     }
 
-    public TransactionGid getXid() {
+    public TransactionXid getXid() {
         return xid;
     }
 

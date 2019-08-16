@@ -4,17 +4,19 @@ package org.micro.tcc.common.constant;
 
 
 public enum TransactionType {
+
     ROOT(1),
     BRANCH(2);
     int id;
 
+
+    public int value(){
+        return id;
+    }
     TransactionType(int id) {
         this.id = id;
     }
 
-    public int getId() {
-        return id;
-    }
 
     public static TransactionType valueOf(int id) {
         switch (id) {
