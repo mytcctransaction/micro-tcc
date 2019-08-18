@@ -37,7 +37,7 @@ public class RecoverScheduledZookeeperJob implements ApplicationRunner {
             jobDetail.afterPropertiesSet();
 
             CronTriggerFactoryBean cronTrigger = new CronTriggerFactoryBean();
-            cronTrigger.setBeanName("transactionRecoveryCronTrigger");
+            cronTrigger.setBeanName("transactionRecoveryZKCronTrigger");
             cronTrigger.setCronExpression(transactionConfigurator.getCronZkExpression());
             cronTrigger.setJobDetail(jobDetail.getObject());
             cronTrigger.afterPropertiesSet();
