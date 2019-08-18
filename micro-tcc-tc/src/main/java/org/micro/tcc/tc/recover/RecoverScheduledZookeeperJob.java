@@ -2,6 +2,7 @@ package org.micro.tcc.tc.recover;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.micro.tcc.tc.component.CoordinatorWatcher;
 import org.micro.tcc.tc.component.SpringContextAware;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
@@ -13,32 +14,31 @@ import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 
 
 @Slf4j
-public class RecoverScheduledJob implements ApplicationRunner {
-
-    private TransactionRecovery transactionRecovery=new TransactionRecovery();
+public class RecoverScheduledZookeeperJob implements ApplicationRunner {
 
 
     private Scheduler scheduler;
 
     public void init() {
 
+        TransactionRecoverConfig transactionConfigurator= SpringContextAware.getBean(TransactionRecoverConfig.class);
+
         try {
-
-
-            TransactionRecoverConfig transactionConfigurator= SpringContextAware.getBean(TransactionRecoverConfig.class);
-            if(StringUtils.isEmpty(transactionConfigurator.getCronExpression())){
+            if(StringUtils.isEmpty(transactionConfigurator.getCronZkExpression())){
                 return;
             }
+
+            CoordinatorWatcher coordinatorWatcher= SpringContextAware.getBean(CoordinatorWatcher.class);
             MethodInvokingJobDetailFactoryBean jobDetail = new MethodInvokingJobDetailFactoryBean();
-            jobDetail.setTargetObject(transactionRecovery);
-            jobDetail.setTargetMethod("beginRecover");
-            jobDetail.setName("transactionRecoveryJob");
+            jobDetail.setTargetObject(coordinatorWatcher);
+            jobDetail.setTargetMethod("processTransactionStart");
+            jobDetail.setName("transactionRecoveryZKJob");
             jobDetail.setConcurrent(false);
             jobDetail.afterPropertiesSet();
 
             CronTriggerFactoryBean cronTrigger = new CronTriggerFactoryBean();
             cronTrigger.setBeanName("transactionRecoveryCronTrigger");
-            cronTrigger.setCronExpression(transactionConfigurator.getCronExpression());
+            cronTrigger.setCronExpression(transactionConfigurator.getCronZkExpression());
             cronTrigger.setJobDetail(jobDetail.getObject());
             cronTrigger.afterPropertiesSet();
             SchedulerFactory schedulerfactory = new StdSchedulerFactory();
@@ -53,9 +53,7 @@ public class RecoverScheduledJob implements ApplicationRunner {
         }
     }
 
-    public void setTransactionRecovery(TransactionRecovery transactionRecovery) {
-        this.transactionRecovery = transactionRecovery;
-    }
+
 
 
 

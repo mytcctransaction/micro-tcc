@@ -3,12 +3,10 @@ package org.micro.tcc.tc.component;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.constant.TransactionType;
-import org.micro.tcc.common.core.TransactionMember;
-import org.micro.tcc.common.core.TccTransactionContext;
-import org.micro.tcc.common.core.Transaction;
-import org.micro.tcc.common.core.TransactionRepository;
+import org.micro.tcc.common.core.*;
 import org.micro.tcc.common.exception.CancelException;
 import org.micro.tcc.common.exception.ConfirmException;
 import org.micro.tcc.common.exception.NoExistedTransactionException;
@@ -30,7 +28,7 @@ public class TransactionManager {
 
     private TransactionRepository transactionRepository;
 
-    private Cache<String, Transaction> TRANSACTION_CACHE = CacheBuilder.newBuilder().maximumSize(5000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
+    private Cache<String, Transaction> TRANSACTION_CACHE = CacheBuilder.newBuilder().maximumSize(500000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
 
     private static final ThreadLocal<Deque<Transaction>> CURRENT = new ThreadLocal<Deque<Transaction>>();
 
@@ -84,6 +82,11 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 开启事务
+     * @return
+     * @throws Exception
+     */
     public Transaction begin() throws Exception{
         Transaction transaction = new Transaction(TransactionType.ROOT);
         transactionRepository.create(transaction);
@@ -92,6 +95,11 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 分支事务开启
+     * @param transactionContext
+     * @return
+     */
     public Transaction propagationSupportsStart(TccTransactionContext transactionContext) {
         Transaction transaction = new Transaction(transactionContext);
         transactionRepository.create(transaction);
@@ -100,6 +108,12 @@ public class TransactionManager {
         return transaction;
     }
 
+    /**
+     * 判断是否存在事务
+     * @param transactionContext
+     * @return
+     * @throws NoExistedTransactionException
+     */
     public Transaction propagationExistStart(TccTransactionContext transactionContext) throws NoExistedTransactionException {
         Transaction transaction = transactionRepository.findByGroupId(transactionContext.getXid().getGlobalTccTransactionId());
         if (transaction != null) {
@@ -130,12 +144,107 @@ public class TransactionManager {
         TRANSACTION_CACHE.invalidate(key);
     }
 
+    /**
+     * 异步处理事务
+     * @param groupId
+     * @param status
+     */
+    private void syncProcess(final String groupId,final String status){
+        Transaction transaction = null;
+        try {
+            if(!isExitGlobalTransaction(groupId)){
+                log.info("TCC:服务器不存在globalTransactionId:{}",groupId);
+                return;
+            }
+            int _status = Integer.parseInt(status);
+            TransactionXid transactionXid = new TransactionXid(groupId);
+            TccTransactionContext transactionContext = new TccTransactionContext(transactionXid, _status);
+            switch (TransactionStatus.valueOf(_status)) {
+                case TRY:
+                    break;
+                case CONFIRM:
+                    try {
+                        transaction = propagationExistStart(transactionContext);
+                        boolean asyncConfirm = false;
+                        if ("true".equals(transaction.getAsyncConfirm())) {
+                            asyncConfirm = true;
+                        }
+                        commit(transaction, asyncConfirm);
+                        cleanAfterConfirm(transaction);
+                    } catch (Throwable excepton) {
+                        log.error(excepton.getMessage(),excepton);
+                        //主调用方commit失败，修改状态为cancel，次调用方需要全部回滚
+                        if(null==transaction){
+                            break;
+                        }
+                        transaction.changeStatus(TransactionStatus.CANCEL);
+                        CoordinatorWatcher.getInstance().modify(transaction);
+
+                    }finally{
+
+
+                    }
+                    break;
+                case CANCEL:
+                    try {
+                        transaction = propagationExistStart(transactionContext);
+                        boolean asyncCancel = false;
+                        if ("true".equals(transaction.getAsyncConfirm())) {
+                            asyncCancel = true;
+                        }
+                        rollback(transaction, asyncCancel);
+                        cleanAfterCancel(transaction);
+                    } catch (NoExistedTransactionException exception) {
+
+                    }finally{
+
+
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }catch (Throwable t){
+            log.error("TCC:分布式事务管理器发生错误：",t);
+        }
+    }
+
+    /**
+     * 处理zk 事件
+     * @param groupId
+     * @param status
+     */
+    public void process(String groupId,String status){
+        if(StringUtils.isEmpty(groupId)){
+            return;
+        }
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                syncProcess(groupId,status);
+            }
+        });
+
+
+
+    }
+
+    /**
+     * 回滚事务by客户端
+     * @throws Exception
+     */
     public void rollbackForClient() throws Exception {
        Transaction transaction =getCurrentTransaction();
         transaction.changeStatus(TransactionStatus.CANCEL);
-        CoordinatorWatcher.modify(transaction);
+        CoordinatorWatcher.getInstance().modify(transaction);
     }
 
+    /**
+     * 提交事务
+     * @param transactionArg
+     * @param asyncCommit
+     */
     public void commit(Transaction transactionArg,boolean asyncCommit) {
         final Transaction transaction;
         if(null==transactionArg){
@@ -164,8 +273,11 @@ public class TransactionManager {
     }
 
 
-
-
+    /**
+     * 回滚事务
+     * @param transactionArg
+     * @param asyncRollback
+     */
     public void rollback(Transaction transactionArg,boolean asyncRollback) {
 
         final Transaction transaction;
@@ -198,7 +310,10 @@ public class TransactionManager {
         }
     }
 
-
+    /**
+     * 提交事务
+     * @param transaction
+     */
     private void commitTransaction(Transaction transaction) {
         try {
             transaction.commit();
@@ -209,6 +324,10 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * 回滚事务
+     * @param transaction
+     */
     private void rollbackTransaction(Transaction transaction) {
         try {
             transaction.rollback();
@@ -219,6 +338,10 @@ public class TransactionManager {
         }
     }
 
+    /**
+     * 获取当前事务
+     * @return
+     */
     public Transaction getCurrentTransaction() {
         if(CURRENT.get()!=null)
             return CURRENT.get().peek();
@@ -230,7 +353,10 @@ public class TransactionManager {
         return transactions != null && !transactions.isEmpty();
     }
 
-
+    /**
+     * 注册事务
+     * @param transaction
+     */
     private void registerTransaction(Transaction transaction) {
 
         if (CURRENT.get() == null) {
@@ -246,8 +372,24 @@ public class TransactionManager {
 
     public void cleanAfterCompletion(Transaction transaction) {
         //clean(transaction);
+
     }
 
+    public void cleanAfterConfirm(Transaction transaction) {
+        clean(transaction);
+        delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
+        try {
+            CoordinatorWatcher.getInstance().deleteDataNodeForConfirm(transaction);
+        } catch (Exception e) {
+            log.error(e.getMessage(),e);
+        }
+
+    }
+
+    /**
+     * 清楚缓存
+     * @param transaction
+     */
     private void clean(Transaction transaction){
         if (isTransactionActive() && transaction != null) {
             Transaction currentTransaction = getCurrentTransaction();
@@ -261,12 +403,26 @@ public class TransactionManager {
             }
         }
     }
+
+    /**
+     * 删除缓存
+     * @param transaction
+     */
     public void cleanAfterCancel(Transaction transaction) {
         clean(transaction);
         delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
+        try {
+            CoordinatorWatcher.getInstance().deleteDataNode(transaction);
+        } catch (Exception e) {
+            log.error(e.getMessage(),e);
+        }
 
     }
 
+    /**
+     * 添加参与者
+     * @param participant
+     */
     public void addingParticipants(TransactionMember participant) {
         Transaction transaction = this.getCurrentTransaction();
         transaction.addingParticipants(participant);

@@ -8,6 +8,7 @@ import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.tc.http.HttpClientRequestInterceptor;
 import org.micro.tcc.tc.http.RestTemplateIntercetor;
 import org.micro.tcc.tc.recover.RecoverScheduledJob;
+import org.micro.tcc.tc.recover.RecoverScheduledZookeeperJob;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -42,11 +43,19 @@ public class MicroTccSpringConfig {
         //coordinatorWatcher.start();
         return coordinatorWatcher;
     }
+
     @Bean
     public RecoverScheduledJob recoverScheduledJob(){
         RecoverScheduledJob recoverScheduledJob=new RecoverScheduledJob();
         return recoverScheduledJob;
     }
+
+    @Bean
+    public RecoverScheduledZookeeperJob recoverScheduledZookeeperJob(){
+        RecoverScheduledZookeeperJob recoverScheduledJob=new RecoverScheduledZookeeperJob();
+        return recoverScheduledJob;
+    }
+
     @Bean
     @ConditionalOnClass(HttpRequestInterceptor.class)
     public HttpRequestInterceptor HttpClientRequestInterceptor(){

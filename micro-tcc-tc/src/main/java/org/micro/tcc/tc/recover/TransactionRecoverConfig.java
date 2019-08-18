@@ -9,14 +9,17 @@ public class TransactionRecoverConfig implements RecoverConfig {
 
     public static final TransactionRecoverConfig INSTANCE = new TransactionRecoverConfig();
 
-    @Value("${transaction.recover.maxRetryCount}")
+    @Value("${transaction.recover.maxRetryCount:30}")
     private int maxRetryCount = 30;
 
     //160 秒
-    @Value("${transaction.recover.recoverDuration}")
+    @Value("${transaction.recover.recoverDuration:160}")
     private int recoverDuration = 160;
-    @Value("${transaction.recover.cronExpression}")
-    private String cronExpression = "0 */1 * * * ?";
+    @Value("${transaction.recover.cronExpression:}")
+    private String cronExpression = "";
+
+    @Value("${transaction.recover.zk.cronExpression:}")
+    private String cronZkExpression = "";
 
     public static TransactionRecoverConfig getInstance(){
         return INSTANCE;
@@ -26,6 +29,14 @@ public class TransactionRecoverConfig implements RecoverConfig {
 
     public TransactionRecoverConfig() {
 
+    }
+
+    public String getCronZkExpression() {
+        return cronZkExpression;
+    }
+
+    public void setCronZkExpression(String cronZkExpression) {
+        this.cronZkExpression = cronZkExpression;
     }
 
     @Override

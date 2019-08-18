@@ -29,7 +29,7 @@ public class TransactionSerializer {
       /*  map.put("ASYNC_CONFIRM".getBytes(), transaction.getAsyncConfirm().getBytes());
         map.put("ASYNC_CANCEL".getBytes(), transaction.getAsyncCancel().getBytes());*/
         map.put("status".getBytes(), ByteUtils.intToBytes(transaction.getStatus().value()));
-        map.put("transaction_type".getBytes(), ByteUtils.intToBytes(transaction.getTransactionType().getId()));
+        map.put("transaction_type".getBytes(), ByteUtils.intToBytes(transaction.getTransactionType().value()));
         map.put("retry_count".getBytes(), ByteUtils.intToBytes(transaction.getRetriedCount()));
         map.put("create_time".getBytes(), DateFormatUtils.format(transaction.getCreateTime(), "yyyy-MM-dd HH:mm:ss").getBytes());
         map.put("update_time".getBytes(), DateFormatUtils.format(transaction.getLastUpdateTime(), "yyyy-MM-dd HH:mm:ss").getBytes());

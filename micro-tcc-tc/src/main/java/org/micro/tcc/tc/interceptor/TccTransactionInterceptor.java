@@ -62,23 +62,24 @@ public class TccTransactionInterceptor {
         try {
             //transaction = transactionManager.begin(tccMethodContext.getUniqueIdentity());
             transaction = transactionManager.begin();
-            CoordinatorWatcher.add(transaction);
+            CoordinatorWatcher.getInstance().add(transaction);
             try {
                 returnValue = tccMethodContext.proceed();
             } catch (Throwable tryingException) {
 
                 transaction.changeStatus(TransactionStatus.CANCEL);
                 //主调用方失败，修改状态为cancel，次调用方需要全部回滚
-                CoordinatorWatcher.modify(transaction);
+                CoordinatorWatcher.getInstance().modify(transaction);
                 throw tryingException;
             }
             try{
+                //发出提交指令，所有子系统执行提交
                 transaction.changeStatus(TransactionStatus.CONFIRM);
-                CoordinatorWatcher.modify(transaction);
+                CoordinatorWatcher.getInstance().modify(transaction);
             }catch (Throwable t){
                 //主调用方commit失败，修改状态为cancel，次调用方需要全部回滚
                 transaction.changeStatus(TransactionStatus.CANCEL);
-                CoordinatorWatcher.modify(transaction);
+                CoordinatorWatcher.getInstance().modify(transaction);
                 throw t;
             }
         } finally {
@@ -96,14 +97,14 @@ public class TccTransactionInterceptor {
             switch (TransactionStatus.valueOf(tccMethodContext.getTransactionContext().getStatus())) {
                 case TRY:
                     transaction = transactionManager.propagationSupportsStart(tccMethodContext.getTransactionContext());
-                    CoordinatorWatcher.add(transaction);
+                    CoordinatorWatcher.getInstance().add(transaction);
                     try {
                         returnObj= tccMethodContext.proceed();
                     }catch (Throwable t){
                         //TODO
                         //调用方commit失败，修改状态为cancel，所有调用方需要全部回滚
                         transaction.changeStatus(TransactionStatus.CANCEL);
-                        CoordinatorWatcher.modify(transaction);
+                        CoordinatorWatcher.getInstance().modify(transaction);
                         throw t;
                     }
 
