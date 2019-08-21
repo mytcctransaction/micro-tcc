@@ -51,6 +51,7 @@ public class MicroTccSpringConfig {
     }
 
     @Bean
+    @ConditionalOnClass(CoordinatorWatcher.class)
     public RecoverScheduledZookeeperJob recoverScheduledZookeeperJob(){
         RecoverScheduledZookeeperJob recoverScheduledJob=new RecoverScheduledZookeeperJob();
         return recoverScheduledJob;
@@ -86,7 +87,9 @@ public class MicroTccSpringConfig {
         return requestTemplate -> {
             log.info("TCC:Feign interceptor ");
             Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();
-            if(null==transaction)return;
+            if(null==transaction){
+                return;
+            }
             String gid = transaction.getTransactionXid().getGlobalTccTransactionId();
             requestTemplate.header(Constant.GLOBAL_TCCTRANSACTION_ID, gid);
             requestTemplate.header(Constant.TCCTRANSACTION_STATUS, String.valueOf(transaction.getStatus().value()));

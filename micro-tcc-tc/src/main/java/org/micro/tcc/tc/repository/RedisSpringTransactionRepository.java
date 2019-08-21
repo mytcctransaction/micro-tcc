@@ -80,8 +80,11 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     }
     @Override
     public int create(Transaction transaction) {
+        long a=System.currentTimeMillis();
         Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
         boolean b=redisTemplate.opsForHash().putIfAbsent(Constant.getTransactionMapKey(),getTransactionXid(transaction),transMap);
+        long aa=System.currentTimeMillis();
+        log.error("create-time:{}",aa-a);
         return converResult(b);
 
     }
@@ -107,18 +110,23 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     @Override
     public Transaction findByGroupId(TransactionXid xid) {
         //String transactionXid=UUID.nameUUIDFromBytes(xid.getGlobalTransactionId()).toString();
+        long a=System.currentTimeMillis();
         String transactionXid=xid.getGlobalTccTransactionId();
         Map<byte[], byte[]> transMap=(Map<byte[], byte[]>)redisTemplate.opsForHash().get(Constant.getTransactionMapKey(),transactionXid);
         Transaction transaction= TransactionSerializer.deserialize(serializer,transMap);
+        long aa=System.currentTimeMillis();
+        log.error("findByGroupId-time:{}",aa-a);
         return transaction;
     }
 
     @Override
     public Transaction findByGroupId(String gid) {
-
+        long a=System.currentTimeMillis();
         Map<byte[], byte[]> transMap=(Map<byte[], byte[]>)redisTemplate.opsForHash().get(Constant.getTransactionMapKey(),gid);
         if (null != transMap) {
           Transaction transaction = TransactionSerializer.deserialize(serializer, transMap);
+            long aa=System.currentTimeMillis();
+            log.error("findByGroupId-time:{}",aa-a);
           return transaction;
         }else{
             return null;

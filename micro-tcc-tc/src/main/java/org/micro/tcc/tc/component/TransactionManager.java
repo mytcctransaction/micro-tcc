@@ -16,9 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 @Slf4j
@@ -33,6 +31,8 @@ public class TransactionManager {
     private static final ThreadLocal<Deque<Transaction>> CURRENT = new ThreadLocal<Deque<Transaction>>();
 
     private ExecutorService executorService;
+
+    final CountDownLatch latch = new CountDownLatch(1);
 
     public void setTransactionRepository(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
@@ -60,6 +60,24 @@ public class TransactionManager {
         }
         this.executorService=executorService;
 
+    }
+
+    /**
+     * 暂停线程执行
+     */
+    public void await(){
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            log.error(e.getMessage(),e);
+        }
+    }
+
+    /**
+     * 唤醒线程
+     */
+    public void countDown(){
+        latch.countDown();
     }
     public void setExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
@@ -121,13 +139,14 @@ public class TransactionManager {
             registerTransaction(transaction);
             return transaction;
         } else {
-
-            throw new NoExistedTransactionException("TCC:Group id 不存在！");
+            throw new NoExistedTransactionException("TCC:Group id 不存在！"+transactionContext.getXid().getGlobalTccTransactionId());
         }
     }
     public boolean isExitGlobalTransaction(String groupId){
        Transaction transaction= peekCache(groupId);
-       if(null!=transaction)return true;
+       if(null!=transaction){
+           return true;
+       }
        return false;
     }
     public void putToCache(String key,Transaction transaction){
@@ -149,13 +168,13 @@ public class TransactionManager {
      * @param groupId
      * @param status
      */
-    private void syncProcess(final String groupId,final String status){
+    public void syncProcess(final String groupId,final String status){
         Transaction transaction = null;
         try {
-            if(!isExitGlobalTransaction(groupId)){
+            /*if(!isExitGlobalTransaction(groupId)){
                 log.info("TCC:服务器不存在globalTransactionId:{}",groupId);
                 return;
-            }
+            }*/
             int _status = Integer.parseInt(status);
             TransactionXid transactionXid = new TransactionXid(groupId);
             TccTransactionContext transactionContext = new TccTransactionContext(transactionXid, _status);
@@ -165,6 +184,9 @@ public class TransactionManager {
                 case CONFIRM:
                     try {
                         transaction = propagationExistStart(transactionContext);
+                        if(null==transaction){
+
+                        }
                         boolean asyncConfirm = false;
                         if ("true".equals(transaction.getAsyncConfirm())) {
                             asyncConfirm = true;
@@ -181,7 +203,6 @@ public class TransactionManager {
                         CoordinatorWatcher.getInstance().modify(transaction);
 
                     }finally{
-
 
                     }
                     break;
@@ -219,13 +240,23 @@ public class TransactionManager {
         if(StringUtils.isEmpty(groupId)){
             return;
         }
-        executorService.submit(new Runnable() {
+        Future future= executorService.submit(new Runnable() {
             @Override
             public void run() {
                 syncProcess(groupId,status);
             }
         });
+        try {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    CoordinatorWatcher.getInstance().processTransactionStart(future);
+                }
+            });
 
+        } catch (Exception e) {
+            log.error(e.getMessage(),e);
+        }
 
 
     }
@@ -279,20 +310,15 @@ public class TransactionManager {
      * @param asyncRollback
      */
     public void rollback(Transaction transactionArg,boolean asyncRollback) {
-
         final Transaction transaction;
         if(null==transactionArg){
             transaction = getCurrentTransaction();
         }else {
             transaction = transactionArg;
         }
-
         transaction.changeStatus(TransactionStatus.CANCEL);
-
         transactionRepository.update(transaction);
-
         if (asyncRollback) {
-
             try {
                 executorService.submit(new Runnable() {
                     @Override
@@ -305,7 +331,6 @@ public class TransactionManager {
                 throw new CancelException(rollbackException);
             }
         } else {
-
             rollbackTransaction(transaction);
         }
     }
@@ -333,7 +358,7 @@ public class TransactionManager {
             transaction.rollback();
             transactionRepository.delete(transaction);
         } catch (Throwable rollbackException) {
-            logger.warn("TCC: transaction rollback failed.", rollbackException);
+            logger.error("TCC: transaction rollback failed.", rollbackException);
             //throw new CancelException(rollbackException);
         }
     }

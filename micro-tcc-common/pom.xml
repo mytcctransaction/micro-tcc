@@ -99,7 +99,11 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.58</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>reflectasm</artifactId>
+            <version>1.11.0</version>
+        </dependency>
     </dependencies>
 
 </project>
