@@ -31,6 +31,7 @@ public class TransactionManager {
     private static final ThreadLocal<Deque<Transaction>> CURRENT = new ThreadLocal<Deque<Transaction>>();
 
     private ExecutorService executorService;
+    private ExecutorService futureEcutorService;
 
     final CountDownLatch latch = new CountDownLatch(1);
 
@@ -49,16 +50,18 @@ public class TransactionManager {
             transactionRepository= RedisSpringTransactionRepository.getInstance();
         }
 
-        if (executorService == null) {
+        if (executorService == null || futureEcutorService==null) {
 
             synchronized (TransactionManager.class) {
 
                 if (executorService == null) {
                     executorService = Executors.newCachedThreadPool();
                 }
+                if (futureEcutorService == null) {
+                    futureEcutorService = Executors.newCachedThreadPool();
+                }
             }
         }
-        this.executorService=executorService;
 
     }
 
@@ -171,10 +174,10 @@ public class TransactionManager {
     public void syncProcess(final String groupId,final String status){
         Transaction transaction = null;
         try {
-            /*if(!isExitGlobalTransaction(groupId)){
+            if(!isExitGlobalTransaction(groupId)){
                 log.info("TCC:服务器不存在globalTransactionId:{}",groupId);
                 return;
-            }*/
+            }
             int _status = Integer.parseInt(status);
             TransactionXid transactionXid = new TransactionXid(groupId);
             TccTransactionContext transactionContext = new TccTransactionContext(transactionXid, _status);
@@ -184,9 +187,6 @@ public class TransactionManager {
                 case CONFIRM:
                     try {
                         transaction = propagationExistStart(transactionContext);
-                        if(null==transaction){
-
-                        }
                         boolean asyncConfirm = false;
                         if ("true".equals(transaction.getAsyncConfirm())) {
                             asyncConfirm = true;
@@ -246,8 +246,8 @@ public class TransactionManager {
                 syncProcess(groupId,status);
             }
         });
-        try {
-            executorService.submit(new Runnable() {
+        /*try {
+            futureEcutorService.submit(new Runnable() {
                 @Override
                 public void run() {
                     CoordinatorWatcher.getInstance().processTransactionStart(future);
@@ -256,7 +256,7 @@ public class TransactionManager {
 
         } catch (Exception e) {
             log.error(e.getMessage(),e);
-        }
+        }*/
 
 
     }
@@ -368,8 +368,9 @@ public class TransactionManager {
      * @return
      */
     public Transaction getCurrentTransaction() {
-        if(CURRENT.get()!=null)
+        if(CURRENT.get()!=null){
             return CURRENT.get().peek();
+        }
        return null;
     }
 
@@ -452,5 +453,11 @@ public class TransactionManager {
         Transaction transaction = this.getCurrentTransaction();
         transaction.addingParticipants(participant);
         transactionRepository.update(transaction);
+    }
+
+    public void zkNodeAdd(Transaction transaction) throws Exception{
+
+        CoordinatorWatcher.getInstance().modify(transaction);
+
     }
 }

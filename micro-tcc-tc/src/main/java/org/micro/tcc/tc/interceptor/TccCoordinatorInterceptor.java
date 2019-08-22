@@ -29,7 +29,7 @@ public class TccCoordinatorInterceptor {
     }
 
     public Object interceptTransactionContextMethod(ProceedingJoinPoint pjp) throws Throwable {
-        long a=System.currentTimeMillis();
+
         Transaction transaction = transactionManager.getCurrentTransaction();
 
         if (transaction != null) {
@@ -44,8 +44,8 @@ public class TccCoordinatorInterceptor {
                     break;
             }
         }
-        long b=System.currentTimeMillis();
-        log.error("TccCoordinatorInterceptor-time:{}",b-a);
+
+
         return pjp.proceed(pjp.getArgs());
     }
 

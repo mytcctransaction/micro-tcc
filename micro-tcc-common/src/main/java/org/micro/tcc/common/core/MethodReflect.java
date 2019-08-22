@@ -31,18 +31,17 @@ public class MethodReflect implements Serializable {
         if (StringUtils.isNotEmpty(invocation.getMethodName())) {
 
             try {
-                long a=System.currentTimeMillis();
+
 
                 Object target = BeanFactoryBuilder.factoryBean(invocation.getTargetClass()).getInstance();
-                long b=System.currentTimeMillis();
-                log.error("MethodReflect-time1:{}",b-a);
+
+
                 Method method = null;
-                a=System.currentTimeMillis();
+
                 //生成字节码的方式创建MethodAccess
                 MethodAccess access = MethodAccess.get(target.getClass());
                 Object oo=access.invoke(target,invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArgs());
-                b=System.currentTimeMillis();
-                log.error("MethodReflect-time2:{},method:{}",b-a,invocation.getMethodName());
+
                 // method = target.getClass().getMethod(invocation.getMethodName(), invocation.getParameterTypes());
                 // Object o= method.invoke(target, invocation.getArgs());
                 return oo;

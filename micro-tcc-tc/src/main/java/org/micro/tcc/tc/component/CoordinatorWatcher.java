@@ -24,6 +24,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -55,14 +57,15 @@ public class CoordinatorWatcher implements ApplicationRunner {
     private static final String TRANSACTION_PATH = "/DistributedTransaction";
 
     private static final String TRANSACTION_GROUP_PATH = "/DistributedTransaction/DistributedTransactionGroup";
-    
+
     ExecutorService pool = Executors.newCachedThreadPool();
+    ExecutorService nodePool = Executors.newCachedThreadPool();
     private final static String DELIMIT="#";
     private TransactionManager transactionManager=null;
     private static CuratorFramework client;
 
-    private static volatile long timeMillis=System.currentTimeMillis();
-    TreeCache treeCache=null;
+
+    PathChildrenCache childrenCache=null;
     private static  CoordinatorWatcher coordinatorWatcher=new CoordinatorWatcher();
 
     public static CoordinatorWatcher getInstance(){
@@ -81,7 +84,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
     }
 
     public void start()throws Exception {
-        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000*60, 10);
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000*60, 50);
 
         client = CuratorFrameworkFactory.builder()
                 .connectString(zkIp)
@@ -100,19 +103,26 @@ public class CoordinatorWatcher implements ApplicationRunner {
                 if (state == ConnectionState.LOST) {
                     //连接丢失
                     log.info("TCC:lost session with zookeeper");
-                    treeCache.close();
+                    if(null!=childrenCache){
+                        try {
+                            childrenCache.close();
+                        } catch (IOException e) {
+                            log.error(e.getMessage(),e);
+                        }
+                    }
+
                 } else if (state == ConnectionState.CONNECTED) {
                     //连接新建
                     log.info("TCC:connected with zookeeper");
                     try {
-                        addTreeWatch();
+                        addPathChildWatch();
                     } catch (Exception e) {
                         log.error(e.getMessage(),e);
                     }
                 } else if (state == ConnectionState.RECONNECTED) {
                     log.info("TCC:reconnected with zookeeper");
                     try {
-                        addTreeWatch();
+                        addPathChildWatch();
                     } catch (Exception e) {
                         log.error(e.getMessage(),e);
                     }
@@ -127,7 +137,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     private void addPathChildWatch() throws Exception{
         // PathChildrenCache: 监听数据节点的增删改，可以设置触发的事件
-        final PathChildrenCache childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true);
+        childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true,false,nodePool);
         /**
          * StartMode: 初始化方式
          * POST_INITIALIZED_EVENT：异步初始化，初始化之后会触发事件
@@ -137,7 +147,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
         childrenCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
         // 列出子节点数据列表，需要使用BUILD_INITIAL_CACHE同步初始化模式才能获得，异步是获取不到的
         //List<ChildData> childDataList = childrenCache.getCurrentData();
-    /*    log.info("当前节点的子节点详细数据列表：");
+        /*    log.info("当前节点的子节点详细数据列表：");
         for (ChildData childData : childDataList) {
             log.info("\t* 子节点路径：" + new String(childData.getPath()) + "，该节点的数据为：" + new String(childData.getData()));
         }*/
@@ -149,78 +159,27 @@ public class CoordinatorWatcher implements ApplicationRunner {
                 if (event.getType().equals(PathChildrenCacheEvent.Type.INITIALIZED)) {  // 子节点初始化时触发
                     log.info("TCC:子节点初始化成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {  // 添加子节点时触发
-                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 添加成功，");
-                    //log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
-                    getTransactionManager().process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
+                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 添加成功");
+                    getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_REMOVED)) {  // 删除子节点时触发
-                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 删除成功，");
-                    //log.info("TCC:zk该子节点的数据为：" + new String(event.getData().getData()));
-                    //process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
+                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 删除成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_UPDATED)) {  // 修改子节点数据时触发
-                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 数据更新成功，");
-                    //log.info("TCC:zk子节点：" + event.getData().getPath() + " 新的数据为：" + new String(event.getData().getData()));
-                    getTransactionManager().process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()));
+                    log.info("TCC:zk子节点：" + event.getData().getPath() + " 数据更新成功");
+                    getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 }
             }
         },pool);
 
     }
 
-    private String getNodeGroupId(String TRANSACTION_PATH){
-        String[] path=TRANSACTION_PATH.split("\\"+DELIMIT);
+    private String getNodeGroupId(String transactionPath){
+        String[] path=transactionPath.split("\\"+DELIMIT);
         if(path.length==2){
             return path[0];
         }
         return "";
     }
-    private void addTreeWatch() throws Exception{
-        //设置节点的cache
-        treeCache =TreeCache.newBuilder(client,TRANSACTION_PATH).setCacheData(false).build();
-        //设置监听器和处理过程
-        treeCache.getListenable().addListener(new TreeCacheListener() {
-            @Override
-            public void childEvent(CuratorFramework client, TreeCacheEvent event) throws Exception {
-                ChildData data = event.getData();
-                String dataVal="";
-                if(null!=data){
-                    if(data.getData()!=null){
-                        dataVal=new String(data.getData());
-                    }
 
-                }
-                if(data !=null && !StringUtils.isEmpty(dataVal)){
-                    String temp=event.getData().getPath();
-                    if(temp.indexOf(Constant.getAppName())==-1){
-                        return;
-                    }
-                    switch (event.getType()) {
-                        case NODE_ADDED:
-                            log.debug("TCC:NODE_ADDED : "+ data.getPath() +"  数据:"+ new String(data.getData()));
-                            getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
-                            break;
-                        case NODE_REMOVED:
-                            log.debug("TCC:NODE_REMOVED : "+ data.getPath() +"  数据:"+ new String(data.getData()));
-                           // process(ZKPaths.getNodeFromPath(event.getData().getPath()),new String(event.getData().getData()))
-                            break;
-                        case NODE_UPDATED:
-                            log.debug("TCC:NODE_UPDATED : "+ data.getPath() +"  数据:"+ new String(data.getData()));
-                            getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
-                        case INITIALIZED:
-                            log.debug("TCC:NODE_INITIALIZED : "+ data.getPath() +"  数据:"+ new String(data.getData()));
-
-                            break;
-                        default:
-                            break;
-                    }
-                }else{
-                    log.debug( "TCC:zk node data : "+ JSON.toJSONString(event));
-                }
-            }
-        },pool);
-        //开始监听
-        treeCache.start();
-
-    }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -231,28 +190,29 @@ public class CoordinatorWatcher implements ApplicationRunner {
      * 遍历zk 事务节点，把没有监控到watch的事务节点重新执行
      * 主要修复zk watch机制缺陷
      */
-    public void processTransactionStart(Future future){
+    public void processTransactionStart(){
         try{
 
-            future.get(1000*3, TimeUnit.SECONDS);
+           /*   future.get(1000*3, TimeUnit.SECONDS);
             if(!future.isDone()){
                 return;
-            }
-            String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName();
-            // appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId+"/"+globalTccTransactionId#**;
+            }*/
             log.debug("TCC:开始定时处理zookeeper事件");
-            if(treeCache.getCurrentChildren(appPath)!=null){
-                for(String key: treeCache.getCurrentChildren(appPath).keySet()){
-                    String childrenPath=appPath+"/"+key;
-                    Map<String, ChildData> childDataMap= treeCache.getCurrentChildren(childrenPath);
-                    for(String k:childDataMap.keySet()){
-                        if(k.indexOf(DELIMIT+Constant.CONFIRM)!=-1){
-                            jobTransactionProcess(k,childDataMap);
-                        }else if(k.indexOf(DELIMIT+Constant.CANCEL)!=-1){
-                            jobTransactionProcess(k,childDataMap);
-                        }
-                    }
+            String appGroupPath=TRANSACTION_GROUP_PATH;
+            List<String> list=client.getChildren().forPath(appGroupPath);
+            for(String key:list){
+                List<String> childList=null;
+                try{
+                    childList=client.getChildren().forPath(appGroupPath+"/"+key);
+                }catch (Exception e){
+
                 }
+                if(childList==null || childList.size()==0){
+                    client.delete().inBackground().forPath(appGroupPath+"/"+key);
+                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+DELIMIT+Constant.CONFIRM);
+                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+DELIMIT+Constant.CANCEL);
+                }
+
             }
             log.debug("TCC:结束定时处理zookeeper事件");
         }catch (Exception e){
@@ -279,8 +239,8 @@ public class CoordinatorWatcher implements ApplicationRunner {
     }
 
     /**
-     * try阶段 生成事务组，格式：key[事务组/groupId/appName1] ,value[appName]
-     * 生成事务，格式：key[事务/appName/groupId/groupId#** ] ,value [status]
+     * try阶段 生成事务组，格式：key[事务组/groupId/groupId#appName1] ,value[appName]
+     * 生成事务，格式：key[事务/appName/groupId#** ] ,value [status]
      * @param transaction
      * @return
      * @throws Exception
@@ -288,55 +248,45 @@ public class CoordinatorWatcher implements ApplicationRunner {
     public  boolean add(Transaction transaction) throws Exception {
         int status=transaction.getStatus().value();
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId+"/"+globalTccTransactionId;
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+DELIMIT;
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
         switch (TransactionType.valueOf(transaction.getTransactionType().value())){
             case ROOT:
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                        forPath(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+Constant.getAppName(),(Constant.getAppName()).getBytes());
+                        forPath(appGroupPath,(Constant.getAppName()).getBytes());
                 //client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(appPath+DELIMIT+Constant.TRY,(String.valueOf(status)).getBytes());
                 break;
             case BRANCH:
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                        forPath(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+Constant.getAppName(),(Constant.getAppName()).getBytes());
+                        forPath(appGroupPath,(Constant.getAppName()).getBytes());
+               // client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+Constant.getAppName(),(Constant.getAppName()).getBytes());
                 //client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(appPath+DELIMIT+Constant.TRY,(String.valueOf(status)).getBytes());
                 break;
             default:
                 break;
         }
-
-
-        //client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(TRANSACTION_PATH+"/"+globalTccTransactionId,(status+"").getBytes());
-
         return true;
     }
 
     public  boolean modify(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        //String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId+"/"+globalTccTransactionId;
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+DELIMIT;
         int status=transaction.getStatus().value();
         switch (TransactionStatus.valueOf(status)) {
             case TRY:
                 break;
             case CONFIRM:
-                //key[事务组/groupId/appName1]
-                for(String key: treeCache.getCurrentChildren(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId).keySet()){
-                    String appPath=TRANSACTION_PATH+"/"+ key+"/" +globalTccTransactionId+"/"+globalTccTransactionId;
-                    client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                        forPath(appPath+DELIMIT+Constant.CONFIRM,(String.valueOf(status)).getBytes());
-                }
+
+                client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
+                        forPath(appPath+Constant.CONFIRM,(String.valueOf(status)).getBytes());
                 break;
             case CANCEL:
-                for(String key: treeCache.getCurrentChildren(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId).keySet()) {
-                    String appPath=TRANSACTION_PATH+"/"+ key+"/" +globalTccTransactionId+"/"+globalTccTransactionId;
-                    client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                            forPath(appPath+DELIMIT+Constant.CANCEL,(String.valueOf(status)).getBytes());
-                }
-
+                client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
+                        forPath(appPath+Constant.CANCEL,(String.valueOf(status)).getBytes());
                 break;
             default:
                 break;
         }
-
         return true;
     }
 
@@ -347,11 +297,9 @@ public class CoordinatorWatcher implements ApplicationRunner {
      */
     public  void deleteDataNode(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId;
-    /*    Stat stat = client.checkExists().forPath(path);
-        log.info("deleteNode : "+stat);*/
-        client.delete().deletingChildrenIfNeeded()/*.inBackground()*/.forPath(appPath);
-        log.info("TCC:delete zk path:"+appPath);
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
+        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
+        log.info("TCC:delete zk path:"+appGroupPath);
     }
 
     /**
@@ -362,18 +310,14 @@ public class CoordinatorWatcher implements ApplicationRunner {
      */
     public  void deleteDataNodeForConfirm(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId;
-    /*    Stat stat = client.checkExists().forPath(path);
-        log.info("deleteNode : "+stat);*/
-        client.delete().deletingChildrenIfNeeded()/*.inBackground()*/.forPath(appPath);
-        log.info("TCC:delete zk path:"+appPath);
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
+        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
+        log.info("TCC:delete zk path:"+appGroupPath);
     }
     public static void main(String[] args){
         try {
-          long a=System.currentTimeMillis();
           Thread.sleep(2000);
-          long b=System.currentTimeMillis();
-          System.out.println("time:"+(b-a));
+
         } catch (Exception e) {
             e.printStackTrace();
         }

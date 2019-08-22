@@ -36,7 +36,7 @@ public class WebControllerAspect extends HandlerInterceptorAdapter {
                 while (headerNames.hasMoreElements()) {
                     String name = headerNames.nextElement();
                     String headerValue = request.getHeader(name);
-                    /** 遍历请求头里面的属性字段，将logId和token添加到新的请求头中转发到下游服务 */
+                    /** 遍历请求头里面的属性字段，将group id添加到新的请求头中转发到下游服务 */
                     if (Constant.GLOBAL_TCCTRANSACTION_ID.equalsIgnoreCase(name)) {
                         log.info("TCC:添加自定义请求头key:" + name + ",value:" + headerValue);
                         transaction.getTransactionXid().setGlobalTccTransactionId(headerValue);
