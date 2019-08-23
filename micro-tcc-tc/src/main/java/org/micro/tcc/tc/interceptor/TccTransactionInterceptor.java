@@ -31,7 +31,6 @@ public class TccTransactionInterceptor {
     }
 
     public Object interceptTransactionMethod(ProceedingJoinPoint pjp) throws Throwable {
-
         TccMethodContext tccMethodContext = new TccMethodContext(pjp);
         //获取feign传输过来的gid
         Transaction transaction= TransactionManager.getInstance().getCurrentTransaction();
@@ -45,7 +44,6 @@ public class TccTransactionInterceptor {
             case PROVIDER:
                 TccTransactionContext transactionContext=new TccTransactionContext(transaction.getTransactionXid(),transaction.getStatus().value());
                 tccMethodContext.transactionContext=transactionContext;
-
                 return processProvider(tccMethodContext);
             default:
                 return pjp.proceed();
@@ -71,7 +69,6 @@ public class TccTransactionInterceptor {
                 throw tryingException;
             }
             try{
-
                 //发出提交指令，所有子系统执行提交
                 transaction.changeStatus(TransactionStatus.CONFIRM);
                 transactionManager.zkNodeAdd(transaction);
@@ -101,6 +98,7 @@ public class TccTransactionInterceptor {
                     CoordinatorWatcher.getInstance().add(transaction);
                     try {
                         returnObj= tccMethodContext.proceed();
+
                     }catch (Throwable t){
                         //TODO
                         //调用方commit失败，修改状态为cancel，所有调用方需要全部回滚

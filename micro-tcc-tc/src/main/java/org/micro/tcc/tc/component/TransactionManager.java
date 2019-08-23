@@ -18,7 +18,11 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.*;
 
-
+/**
+*@author jeff.liu
+*@desc   事务管理器
+*@date 2019/8/23
+*/
 @Slf4j
 public class TransactionManager {
 
@@ -118,9 +122,17 @@ public class TransactionManager {
 
     /**
      * 分支事务开启
-     * @param transactionContext
+     * @param transaction
      * @return
      */
+    public Transaction beginEnd(Transaction transaction) {
+        transaction.changeStatus(TransactionStatus.CONFIRM);
+        transactionRepository.update(transaction);
+        registerTransaction(transaction);
+        putToCache(transaction);
+        return transaction;
+    }
+
     public Transaction propagationSupportsStart(TccTransactionContext transactionContext) {
         Transaction transaction = new Transaction(transactionContext);
         transactionRepository.create(transaction);
