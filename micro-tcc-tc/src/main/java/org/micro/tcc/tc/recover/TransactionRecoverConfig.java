@@ -9,16 +9,16 @@ public class TransactionRecoverConfig implements RecoverConfig {
 
     public static final TransactionRecoverConfig INSTANCE = new TransactionRecoverConfig();
 
-    @Value("${transaction.recover.maxRetryCount:30}")
+    @Value("${micro.tcc.transaction.recover.maxRetryCount:30}")
     private int maxRetryCount = 30;
 
     //160 秒
-    @Value("${transaction.recover.recoverDuration:160}")
+    @Value("${micro.tcc.transaction.recover.recoverDuration:160}")
     private int recoverDuration = 160;
-    @Value("${transaction.recover.cronExpression:}")
+    @Value("${micro.tcc.transaction.recover.cronExpression:}")
     private String cronExpression = "";
 
-    @Value("${transaction.recover.zk.cronExpression:}")
+    @Value("${micro.tcc.transaction.recover.zk.cronExpression:}")
     private String cronZkExpression = "";
 
     public static TransactionRecoverConfig getInstance(){

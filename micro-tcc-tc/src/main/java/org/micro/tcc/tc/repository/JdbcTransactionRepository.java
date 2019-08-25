@@ -135,18 +135,38 @@ public class JdbcTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public int create(Transaction transaction) {
-        return 0;
+    public boolean create(Transaction transaction) {
+        return true;
     }
 
     @Override
-    public int update(Transaction transaction) {
-        return 0;
+    public boolean createGroupMemberForCancel(Transaction transaction) {
+        return true;
     }
 
     @Override
-    public int delete(Transaction transaction) {
-        return 0;
+    public boolean createGroupMember(Transaction transaction) {
+        return true;
+    }
+
+    @Override
+    public boolean update(Transaction transaction) {
+        return true;
+    }
+
+    @Override
+    public boolean updateGroupTransaction(Transaction transaction) {
+        return true;
+    }
+
+    @Override
+    public boolean delete(Transaction transaction) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteGroup(Transaction transaction) {
+        return true;
     }
 
     @Override

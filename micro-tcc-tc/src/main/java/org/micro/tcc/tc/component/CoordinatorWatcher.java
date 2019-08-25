@@ -19,6 +19,7 @@ import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.exception.NoExistedTransactionException;
+import org.micro.tcc.common.util.CoordinatorUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -60,7 +61,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     ExecutorService pool = Executors.newCachedThreadPool();
     ExecutorService nodePool = Executors.newCachedThreadPool();
-    private final static String DELIMIT="#";
+
     private TransactionManager transactionManager=null;
     private static CuratorFramework client;
 
@@ -160,25 +161,19 @@ public class CoordinatorWatcher implements ApplicationRunner {
                     log.debug("TCC:子节点初始化成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {  // 添加子节点时触发
                     log.debug("TCC:zk子节点：" + event.getData().getPath() + " 添加成功");
-                    getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
+                    getTransactionManager().process(CoordinatorUtils.getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_REMOVED)) {  // 删除子节点时触发
                     log.debug("TCC:zk子节点：" + event.getData().getPath() + " 删除成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_UPDATED)) {  // 修改子节点数据时触发
                     log.debug("TCC:zk子节点：" + event.getData().getPath() + " 数据更新成功");
-                    getTransactionManager().process(getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
+                    getTransactionManager().process(CoordinatorUtils.getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 }
             }
         },pool);
 
     }
 
-    private String getNodeGroupId(String transactionPath){
-        String[] path=transactionPath.split("\\"+DELIMIT);
-        if(path.length==2){
-            return path[0];
-        }
-        return "";
-    }
+
 
 
     @Override
@@ -209,8 +204,8 @@ public class CoordinatorWatcher implements ApplicationRunner {
                 }
                 if(childList==null || childList.size()==0){
                     client.delete().inBackground().forPath(appGroupPath+"/"+key);
-                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+DELIMIT+Constant.CONFIRM);
-                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+DELIMIT+Constant.CANCEL);
+                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+Constant.DELIMIT+Constant.CONFIRM);
+                    client.delete().inBackground().forPath(TRANSACTION_PATH+"/"+key+Constant.DELIMIT+Constant.CANCEL);
                 }
 
             }
@@ -222,7 +217,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
     }
 
     private void jobTransactionProcess(String k,Map<String, ChildData> childDataMap){
-        String groupId=getNodeGroupId(k);
+        String groupId=CoordinatorUtils.getNodeGroupId(k);
         ChildData childData=childDataMap.get(k);
         //String status=new String(childData.getData());
         String status="";
@@ -248,8 +243,8 @@ public class CoordinatorWatcher implements ApplicationRunner {
     public  boolean add(Transaction transaction) throws Exception {
         int status=transaction.getStatus().value();
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+DELIMIT;
-        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT;
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+Constant.DELIMIT+Constant.getAppName();
         switch (TransactionType.valueOf(transaction.getTransactionType().value())){
             case ROOT:
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
@@ -270,7 +265,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     public  boolean modify(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+DELIMIT;
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT;
         int status=transaction.getStatus().value();
         switch (TransactionStatus.valueOf(status)) {
             case TRY:
@@ -297,7 +292,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
      */
     public  void deleteDataNode(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+Constant.DELIMIT+Constant.getAppName();
         client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
         //processTransactionStart();
         log.info("TCC:delete zk path:"+appGroupPath);
@@ -311,7 +306,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
      */
     public  void deleteDataNodeForConfirm(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+DELIMIT+Constant.getAppName();
+        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+Constant.DELIMIT+Constant.getAppName();
         client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
         //processTransactionStart();
         log.info("TCC:delete zk path:"+appGroupPath);

@@ -211,8 +211,8 @@ public class TransactionManager {
                         if(null==transaction){
                             break;
                         }
-                        transaction.changeStatus(TransactionStatus.CANCEL);
-                        CoordinatorWatcher.getInstance().modify(transaction);
+
+                        this.sendCancelOrderToMember(transaction);
 
                     }finally{
 
@@ -295,8 +295,8 @@ public class TransactionManager {
         }else {
             transaction = transactionArg;
         }
-        transaction.changeStatus(TransactionStatus.CONFIRM);
-        transactionRepository.update(transaction);
+        /*transaction.changeStatus(TransactionStatus.CONFIRM);
+        transactionRepository.update(transaction);*/
         if (asyncCommit) {
             try {
                 Long statTime = System.currentTimeMillis();
@@ -417,7 +417,7 @@ public class TransactionManager {
         clean(transaction);
         delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
         try {
-            CoordinatorWatcher.getInstance().deleteDataNodeForConfirm(transaction);
+            //CoordinatorWatcher.getInstance().deleteDataNodeForConfirm(transaction);
         } catch (Exception e) {
             log.error(e.getMessage(),e);
         }
@@ -450,7 +450,7 @@ public class TransactionManager {
         clean(transaction);
         delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
         try {
-            CoordinatorWatcher.getInstance().deleteDataNode(transaction);
+            //CoordinatorWatcher.getInstance().deleteDataNode(transaction);
         } catch (Exception e) {
             log.error(e.getMessage(),e);
         }
@@ -467,9 +467,33 @@ public class TransactionManager {
         transactionRepository.update(transaction);
     }
 
-    public void zkNodeAdd(Transaction transaction) throws Exception{
+    public void saveConfirmOrder(Transaction transaction) throws Exception{
+        transaction.changeStatus(TransactionStatus.CONFIRM);
+        transactionRepository.update(transaction);
 
+    }
+    public void sendConfirmOrderToMember(Transaction transaction) throws Exception{
+        transaction.changeStatus(TransactionStatus.CONFIRM);
         CoordinatorWatcher.getInstance().modify(transaction);
+
+    }
+
+    public void sendCancelOrderToMember(Transaction transaction) throws Exception{
+
+        transactionRepository.createGroupMemberForCancel(transaction);
+        transaction.changeStatus(TransactionStatus.CANCEL);
+        CoordinatorWatcher.getInstance().modify(transaction);
+
+    }
+
+    /**
+     * 添加参与者
+     * @param transaction
+     * @throws Exception
+     */
+    public void addGroupForMember(Transaction transaction) throws Exception{
+        transactionRepository.createGroupMember(transaction);
+        //CoordinatorWatcher.getInstance().add(transaction);
 
     }
 }

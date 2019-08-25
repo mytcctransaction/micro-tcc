@@ -13,7 +13,7 @@ public  class  Constant {
 
 
     public  static String transactionMapKey;
-    private static String prefix="TCC:";
+    public static String prefix="TCC:";
     public static String ROOT=":ROOT";
     public static String BRANCH=":BRANCH";
     public static String TRY="TRY";
@@ -21,9 +21,14 @@ public  class  Constant {
     public static String CANCEL="CANCEL";
     public final static String GLOBAL_TCCTRANSACTION_ID="globalTccTransactionId";
     public final static String TCCTRANSACTION_STATUS="tccTransactionStatus";
+
+    public final static String TRANSACTION_GROUP="TRANSACTION_GROUP:";
+
     public static String getTransactionMapKey(){
         return prefix+transactionMapKey;
     }
+
+    public final static String DELIMIT="#";
 
     public static String getAppName(){
         return transactionMapKey;

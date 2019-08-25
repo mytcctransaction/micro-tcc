@@ -6,6 +6,7 @@ import org.micro.tcc.common.core.TccTransactionContext;
 import org.micro.tcc.common.core.Transaction;
 
 import org.micro.tcc.common.constant.TransactionStatus;
+import org.micro.tcc.common.exception.CancelException;
 import org.micro.tcc.tc.component.TransactionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,25 +60,30 @@ public class TccTransactionInterceptor {
         try {
             //transaction = transactionManager.begin(tccMethodContext.getUniqueIdentity());
             transaction = transactionManager.begin();
-            CoordinatorWatcher.getInstance().add(transaction);
+            transactionManager.addGroupForMember(transaction);
+
             try {
                 returnValue = tccMethodContext.proceed();
+                transactionManager.saveConfirmOrder(transaction);
             } catch (Throwable tryingException) {
-                transaction.changeStatus(TransactionStatus.CANCEL);
+                if(tryingException instanceof CancelException){
+                    throw tryingException;
+                }
                 //主调用方失败，修改状态为cancel，次调用方需要全部回滚
-                CoordinatorWatcher.getInstance().modify(transaction);
-                throw tryingException;
+                transactionManager.sendCancelOrderToMember(transaction);
+                throw new CancelException(tryingException);
             }
             try{
                 //发出提交指令，所有子系统执行提交
-                transaction.changeStatus(TransactionStatus.CONFIRM);
-                transactionManager.zkNodeAdd(transaction);
+                transactionManager.sendConfirmOrderToMember(transaction);
 
             }catch (Throwable t){
+                if(t instanceof CancelException){
+                    throw t;
+                }
                 //主调用方commit失败，修改状态为cancel，次调用方需要全部回滚
-                transaction.changeStatus(TransactionStatus.CANCEL);
-                CoordinatorWatcher.getInstance().modify(transaction);
-                throw t;
+                transactionManager.sendCancelOrderToMember(transaction);
+                throw new CancelException(t);
             }
         } finally {
             transactionManager.cleanAfterCompletion(transaction);
@@ -95,16 +101,18 @@ public class TccTransactionInterceptor {
             switch (TransactionStatus.valueOf(tccMethodContext.getTransactionContext().getStatus())) {
                 case TRY:
                     transaction = transactionManager.propagationSupportsStart(tccMethodContext.getTransactionContext());
-                    CoordinatorWatcher.getInstance().add(transaction);
+                    transactionManager.addGroupForMember(transaction);
                     try {
                         returnObj= tccMethodContext.proceed();
-
+                        transactionManager.saveConfirmOrder(transaction);
                     }catch (Throwable t){
+                        if(t instanceof CancelException){
+                            throw t;
+                        }
                         //TODO
                         //调用方commit失败，修改状态为cancel，所有调用方需要全部回滚
-                        transaction.changeStatus(TransactionStatus.CANCEL);
-                        CoordinatorWatcher.getInstance().modify(transaction);
-                        throw t;
+                        transactionManager.sendCancelOrderToMember(transaction);
+                        throw new CancelException(t);
                     }
                     break;
                 case CONFIRM:

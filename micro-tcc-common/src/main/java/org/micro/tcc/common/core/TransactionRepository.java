@@ -7,11 +7,19 @@ import java.util.List;
 
 public interface TransactionRepository {
 
-    int create(Transaction transaction);
+    boolean create(Transaction transaction);
 
-    int update(Transaction transaction);
+    boolean createGroupMemberForCancel(Transaction transaction);
 
-    int delete(Transaction transaction);
+    boolean createGroupMember(Transaction transaction);
+
+    boolean update(Transaction transaction);
+
+    boolean updateGroupTransaction(Transaction transaction);
+
+    boolean delete(Transaction transaction);
+
+    boolean deleteGroup(Transaction transaction);
 
     Transaction findByGroupId(TransactionXid xid);
 

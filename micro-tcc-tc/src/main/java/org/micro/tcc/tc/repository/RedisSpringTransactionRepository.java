@@ -7,10 +7,13 @@ import org.micro.tcc.common.core.TransactionRepository;
 import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.serializer.KryoPoolSerializer;
 import org.micro.tcc.common.serializer.ObjectSerializer;
+import org.micro.tcc.common.util.ByteUtils;
+import org.micro.tcc.common.util.CoordinatorUtils;
 import org.micro.tcc.tc.util.TransactionSerializer;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.StringRedisConnection;
+import org.springframework.data.redis.core.*;
 import org.micro.tcc.tc.component.SpringContextAware;
 
 import java.io.IOException;
@@ -30,19 +33,20 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     public static RedisSpringTransactionRepository redisSpringTransactionRepository=new RedisSpringTransactionRepository();
 
     private int reCoverCount=1000;
+
     public static RedisSpringTransactionRepository getInstance(){
         return redisSpringTransactionRepository;
     }
+
     public RedisSpringTransactionRepository(){
-        if(redisTemplate==null)
-        redisTemplate= (RedisTemplate)SpringContextAware.getBean("redisTemplate");
+        if(redisTemplate==null){
+            redisTemplate= (RedisTemplate)SpringContextAware.getBean("redisTemplate");
+        }
+
     }
     private ObjectSerializer serializer = new KryoPoolSerializer();
 
-    private int converResult(boolean b){
-        if(b)return 1;
-        return 0;
-    }
+
     @Override
     public List<Transaction> findAll(Date date) {
         return pageList(Constant.getTransactionMapKey());
@@ -78,32 +82,85 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
         String transactionXid=transaction.getTransactionXid().getGlobalTccTransactionId();
         return transactionXid;
     }
-    @Override
-    public int create(Transaction transaction) {
 
+    @Override
+    public boolean create(Transaction transaction) {
         Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
         boolean b=redisTemplate.opsForHash().putIfAbsent(Constant.getTransactionMapKey(),getTransactionXid(transaction),transMap);
 
-        return converResult(b);
+        return true;
 
     }
 
     @Override
-    public int update(Transaction transaction) {
-        Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
+    public boolean createGroupMemberForCancel(Transaction transaction) {
+        String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
+        int pageNo=20;
+        List<String> appNameList=redisTemplate.opsForList().range(Constant.TRANSACTION_GROUP+groupId,0,pageNo);
+        for(String appName:appNameList){
+            String key=CoordinatorUtils.getAppName(appName);
+            redisTemplate.opsForList().leftPush(Constant.TRANSACTION_GROUP+groupId,key+Constant.DELIMIT+Constant.CANCEL);
 
+        }
+      return true;
+
+
+    }
+
+    @Override
+    public boolean createGroupMember(Transaction transaction) {
+        String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
+        redisTemplate.opsForList().leftPush(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CONFIRM);
+        return true;
+    }
+
+    @Override
+    public boolean updateGroupTransaction(Transaction transaction) {
+        String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
+        //Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
+       /* RedisCallback<?> redisCallback =new RedisCallback<Object>() {
+            @Override
+            public Object doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                redisConnection.listCommands().lRange()
+                return null;
+            }
+        };
+        redisTemplate.executePipelined(redisCallback);*/
+
+        int pageNo=20;
+        List<String> appNameList=redisTemplate.opsForList().range(Constant.TRANSACTION_GROUP+groupId,0,pageNo);
+        for(String appName:appNameList){
+            Map<byte[], byte[]> transMap=(Map<byte[], byte[]> )redisTemplate.opsForHash().get(Constant.prefix+appName,groupId);
+            Transaction transactionTemp=TransactionSerializer.deserialize(serializer,transMap);
+            Map<byte[], byte[]> transMapTemp=TransactionSerializer.serialize(serializer,transactionTemp);
+            redisTemplate.opsForHash().put(Constant.prefix+appName,getTransactionXid(transaction),transMapTemp);
+
+        }
+        return true;
+    }
+
+
+
+    @Override
+    public boolean update(Transaction transaction) {
+        Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
         redisTemplate.opsForHash().put(Constant.getTransactionMapKey(),getTransactionXid(transaction),transMap);
       /*  Map<byte[], byte[]> transMap2=(Map<byte[], byte[]> )redisTemplate.opsForHash().get(Constant.getTransactionMapKey(),getTransactionXid(transaction));
         Transaction transaction2= TransactionSerializer.deserialize(serializer,transMap2);*/
 
-        return converResult(true);
+        return true;
     }
 
     @Override
-    public int delete(Transaction transaction) {
+    public boolean delete(Transaction transaction) {
         //Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
         redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
-        return converResult(true);
+        return true;
+    }
+
+    @Override
+    public boolean deleteGroup(Transaction transaction) {
+        return true;
     }
 
     @Override
