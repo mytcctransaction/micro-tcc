@@ -8,10 +8,11 @@ import java.lang.reflect.Method;
 
 /**
  *@author jeff.liu
- *   描述
+ *   反射工具
  * date 2019/7/31
  */
 public class ReflectionUtils {
+
 
     public static Method getTccTransactionMethod(ProceedingJoinPoint pjp) {
         Method method = ((MethodSignature) (pjp.getSignature())).getMethod();

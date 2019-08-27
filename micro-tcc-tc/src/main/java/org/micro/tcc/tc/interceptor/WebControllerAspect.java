@@ -16,7 +16,7 @@ import java.util.Enumeration;
 
 /**
  *@author jeff.liu
- *   描述
+ *   web Controller 拦截器
  * date 2019/7/31
  */
 public class WebControllerAspect extends HandlerInterceptorAdapter {
@@ -28,7 +28,7 @@ public class WebControllerAspect extends HandlerInterceptorAdapter {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         try{
-            log.info("TCC:WebControllerAspect ");
+            log.debug("TCC:WebControllerAspect ");
             Enumeration<String> headerNames = request.getHeaderNames();
             Transaction transaction=new Transaction(TransactionType.BRANCH);
             int count=0;
@@ -38,12 +38,12 @@ public class WebControllerAspect extends HandlerInterceptorAdapter {
                     String headerValue = request.getHeader(name);
                     /** 遍历请求头里面的属性字段，将group id添加到新的请求头中转发到下游服务 */
                     if (Constant.GLOBAL_TCCTRANSACTION_ID.equalsIgnoreCase(name)) {
-                        log.info("TCC:添加自定义请求头key:" + name + ",value:" + headerValue);
+                        log.debug("TCC:添加自定义请求头key:" + name + ",value:" + headerValue);
                         transaction.getTransactionXid().setGlobalTccTransactionId(headerValue);
                         count++;
                     }
                     if (Constant.TCCTRANSACTION_STATUS.equalsIgnoreCase(name)) {
-                        log.info("TCC:添加自定义请求头key:" + name + ",value:" + headerValue);
+                        log.debug("TCC:添加自定义请求头key:" + name + ",value:" + headerValue);
                         transaction.getStatus().setId(Integer.parseInt(headerValue));
                         count++;
                     }

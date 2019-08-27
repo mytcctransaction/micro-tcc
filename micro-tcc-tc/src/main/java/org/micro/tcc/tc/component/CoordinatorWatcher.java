@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
  *  设计思路：
  *  1，当主事务发起方发出提交指令，所有子系统执行提交，成功提交会删除zk节点上指令
  *  2，当某子系统发生异常，发出回滚指令，所有子系统执行回滚，成功回滚会删除zk节点上的指令
- *  3，当主事务发起方发出的指令还存在zk上，说明事务没有正常结束，程序会在启动时候查找异常指令，恢复事务
  *
  *  jeff.liu
  *  2018-04-28 13:40
@@ -59,8 +58,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     private static final String TRANSACTION_GROUP_PATH = "/DistributedTransaction/DistributedTransactionGroup";
 
-    ExecutorService pool = Executors.newCachedThreadPool();
-    ExecutorService nodePool = Executors.newCachedThreadPool();
 
     private TransactionManager transactionManager=null;
     private static CuratorFramework client;
@@ -138,7 +135,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     private void addPathChildWatch() throws Exception{
         // PathChildrenCache: 监听数据节点的增删改，可以设置触发的事件
-        childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true,false,nodePool);
+        childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true,false,this.getTransactionManager().getExecutorService());
         /**
          * StartMode: 初始化方式
          * POST_INITIALIZED_EVENT：异步初始化，初始化之后会触发事件
@@ -148,9 +145,9 @@ public class CoordinatorWatcher implements ApplicationRunner {
         childrenCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
         // 列出子节点数据列表，需要使用BUILD_INITIAL_CACHE同步初始化模式才能获得，异步是获取不到的
         //List<ChildData> childDataList = childrenCache.getCurrentData();
-        /*    log.info("当前节点的子节点详细数据列表：");
+        /*    log.debug("当前节点的子节点详细数据列表：");
         for (ChildData childData : childDataList) {
-            log.info("\t* 子节点路径：" + new String(childData.getPath()) + "，该节点的数据为：" + new String(childData.getData()));
+            log.debug("\t* 子节点路径：" + new String(childData.getPath()) + "，该节点的数据为：" + new String(childData.getData()));
         }*/
        // 添加事件监听器
        childrenCache.getListenable().addListener(new PathChildrenCacheListener() {
@@ -169,7 +166,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
                     getTransactionManager().process(CoordinatorUtils.getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 }
             }
-        },pool);
+        },this.getTransactionManager().getExecutorService());
 
     }
 
@@ -271,7 +268,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
             case TRY:
                 break;
             case CONFIRM:
-
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
                         forPath(appPath+Constant.CONFIRM,(String.valueOf(status)).getBytes());
                 break;
@@ -290,12 +286,13 @@ public class CoordinatorWatcher implements ApplicationRunner {
      * @param transaction
      * @throws Exception
      */
-    public  void deleteDataNode(Transaction transaction) throws Exception{
+    public  void deleteDataNodeForCancel(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+Constant.DELIMIT+Constant.getAppName();
-        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
-        //processTransactionStart();
-        log.info("TCC:delete zk path:"+appGroupPath);
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT+Constant.CONFIRM;
+        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
+        appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT+Constant.CANCEL;
+        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
+        log.debug("TCC:delete node path:"+appPath);
     }
 
     /**
@@ -306,10 +303,10 @@ public class CoordinatorWatcher implements ApplicationRunner {
      */
     public  void deleteDataNodeForConfirm(Transaction transaction) throws Exception{
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        String appGroupPath=TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+globalTccTransactionId+Constant.DELIMIT+Constant.getAppName();
-        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appGroupPath);
-        //processTransactionStart();
-        log.info("TCC:delete zk path:"+appGroupPath);
+        String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT+Constant.CONFIRM;
+        client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
+
+        log.debug("TCC:delete node path:"+appPath);
     }
     public static void main(String[] args){
         try {

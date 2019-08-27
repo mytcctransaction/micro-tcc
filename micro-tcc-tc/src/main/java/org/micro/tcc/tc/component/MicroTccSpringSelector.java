@@ -12,7 +12,7 @@ import java.util.List;
 
 /**
 *@author jeff.liu
-*   描述
+*  spring boot 启动管理
 * date 2019/8/6
 */
 @Slf4j
@@ -28,7 +28,7 @@ public class MicroTccSpringSelector implements ImportSelector, BeanFactoryAware 
         List<String> importClasses = new ArrayList<>();
         if(isEnable){
             importClasses.add(MicroTccSpringConfig.class.getName());
-            String microTcc="          _                      _           \n" +
+            String microTcc="           _                      _           \n" +
                     " _ __ ___ (_) ___ _ __ ___       | |_ ___ ___ \n" +
                     "| '_ ` _ \\| |/ __| '__/ _ \\ _____| __/ __/ __|\n" +
                     "| | | | | | | (__| | | (_) |_____| || (_| (__ \n" +

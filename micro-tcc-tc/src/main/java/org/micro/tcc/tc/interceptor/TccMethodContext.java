@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 
 /**
  *@author jeff.liu
- *   描述
+ *   tcc 方法内容
  * date 2019/7/31
  */
 public class TccMethodContext {

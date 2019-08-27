@@ -1,9 +1,24 @@
 package org.micro.tcc.common.constant;
 
-
+/**
+*@author jeff.liu
+*@desc   事务状态
+*@date 2019/8/27
+*/
 public enum TransactionStatus {
 
-    TRY(1), CONFIRM(2), CANCEL(3);
+    /**
+     * 尝试发起
+     */
+    TRY(1),
+    /**
+     * 事务确认
+     */
+    CONFIRM(2),
+    /**
+     * 事务取消
+     */
+    CANCEL(3);
 
     private int id;
 

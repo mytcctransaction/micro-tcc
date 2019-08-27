@@ -13,6 +13,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
+/**
+*@author jeff.liu
+*@desc   分布式事务
+*@date 2019/8/27
+*/
 public class Transaction implements Serializable {
 
     private static final long serialVersionUID = 776032890445193092L;
@@ -21,12 +26,24 @@ public class Transaction implements Serializable {
 
     private String asyncCancel="false";
 
+    /**
+     * 全局id
+     */
     private TransactionXid xid;
 
+    /**
+     * 事务状态
+     */
     private TransactionStatus status;
 
+    /**
+     * 事务类型
+     */
     private TransactionType transactionType;
 
+    /**
+     * 重试次数
+     */
     private volatile int retriedCount = 0;
 
     private Date createTime = new Date();
@@ -35,6 +52,9 @@ public class Transaction implements Serializable {
 
     private long version = 1;
 
+    /**
+     * 参与者
+     */
     private List<TransactionMember> participants = new ArrayList<TransactionMember>();
 
     private Map<String, Object> attachments = new ConcurrentHashMap<String, Object>();

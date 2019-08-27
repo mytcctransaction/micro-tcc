@@ -2,7 +2,7 @@ package org.micro.tcc.common.util;
 
 /**
  *@author jeff.liu
- *   描述
+ *   描述 字节工具
  * date 2019/7/31
  */
 public class ByteUtils {

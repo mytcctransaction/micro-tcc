@@ -99,21 +99,21 @@ public class CoordinatorTreeCacheWatcher implements ApplicationRunner {
             public void stateChanged(CuratorFramework client, ConnectionState state) {
                 if (state == ConnectionState.LOST) {
                     //连接丢失
-                    log.info("TCC:lost session with zookeeper");
+                    log.debug("TCC:lost session with zookeeper");
                     if(null!=treeCache){
                         treeCache.close();
                     }
 
                 } else if (state == ConnectionState.CONNECTED) {
                     //连接新建
-                    log.info("TCC:connected with zookeeper");
+                    log.debug("TCC:connected with zookeeper");
                     try {
                         addTreeWatch();
                     } catch (Exception e) {
                         log.error(e.getMessage(),e);
                     }
                 } else if (state == ConnectionState.RECONNECTED) {
-                    log.info("TCC:reconnected with zookeeper");
+                    log.debug("TCC:reconnected with zookeeper");
                     try {
                         addTreeWatch();
                     } catch (Exception e) {
@@ -310,9 +310,9 @@ public class CoordinatorTreeCacheWatcher implements ApplicationRunner {
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
         String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId;
     /*    Stat stat = client.checkExists().forPath(path);
-        log.info("deleteNode : "+stat);*/
+        log.debug("deleteNode : "+stat);*/
         client.delete().deletingChildrenIfNeeded()/*.inBackground()*/.forPath(appPath);
-        log.info("TCC:delete zk path:"+appPath);
+        log.debug("TCC:delete zk path:"+appPath);
     }
 
     /**
@@ -325,9 +325,9 @@ public class CoordinatorTreeCacheWatcher implements ApplicationRunner {
         String globalTccTransactionId=transaction.getTransactionXid().getGlobalTccTransactionId();
         String appPath=TRANSACTION_PATH+"/"+ Constant.getAppName()+"/" +globalTccTransactionId;
     /*    Stat stat = client.checkExists().forPath(path);
-        log.info("deleteNode : "+stat);*/
+        log.debug("deleteNode : "+stat);*/
         client.delete().deletingChildrenIfNeeded()/*.inBackground()*/.forPath(appPath);
-        log.info("TCC:delete zk path:"+appPath);
+        log.debug("TCC:delete zk path:"+appPath);
     }
     public static void main(String[] args){
         try {

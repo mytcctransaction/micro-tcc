@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 
 /**
  *@author jeff.liu
- *   描述
+ *   参与者拦截后具体实现
  * date 2019/7/31
  */
 @Slf4j
@@ -42,6 +42,8 @@ public class TccCoordinatorInterceptor {
                     break;
                 case CANCEL:
                     break;
+                    default:
+                        break;
             }
         }
 

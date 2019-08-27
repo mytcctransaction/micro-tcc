@@ -27,21 +27,13 @@ public class MethodReflect implements Serializable {
 
     public Object invoke(TccTransactionContext transactionContext, Invocation invocation) {
 
-
         if (StringUtils.isNotEmpty(invocation.getMethodName())) {
-
             try {
-
-
                 Object target = BeanFactoryBuilder.factoryBean(invocation.getTargetClass()).getInstance();
-
-
                 Method method = null;
-
                 //生成字节码的方式创建MethodAccess
                 MethodAccess access = MethodAccess.get(target.getClass());
                 Object oo=access.invoke(target,invocation.getMethodName(), invocation.getParameterTypes(), invocation.getArgs());
-
                 // method = target.getClass().getMethod(invocation.getMethodName(), invocation.getParameterTypes());
                 // Object o= method.invoke(target, invocation.getArgs());
                 return oo;

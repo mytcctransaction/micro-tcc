@@ -17,6 +17,12 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+
+/**
+*@author jeff.liu
+*@desc   事务恢复具体实现
+*@date 2019/8/27
+*/
 @Slf4j
 public class TransactionRecovery {
 
@@ -25,9 +31,13 @@ public class TransactionRecovery {
         log.debug("TCC:准备进行事务恢复");
         List<Transaction> transactions = loadExceptionTransactions();
         if(null!=transactions) recoverExceptionTransactions(transactions);
+        cleanZookeeperNodeData();
         log.debug("TCC:事务恢复成功结束");
     }
 
+    private void cleanZookeeperNodeData(){
+
+    }
     private List<Transaction> loadExceptionTransactions() {
         long currentTimeInMillis = Calendar.getInstance().getTimeInMillis();
 

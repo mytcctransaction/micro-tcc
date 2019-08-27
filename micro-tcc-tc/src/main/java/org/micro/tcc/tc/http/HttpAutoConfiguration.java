@@ -15,7 +15,7 @@ import java.util.Collections;
 
 /**
  * @author jeff.liu
- *
+ *  HTTP 配置
  *  date 2019/8/6 10:26
  */
 @Configuration

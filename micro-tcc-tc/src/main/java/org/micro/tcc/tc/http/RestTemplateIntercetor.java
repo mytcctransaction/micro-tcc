@@ -14,7 +14,7 @@ import java.io.IOException;
 
 /**
  * @author jeff.liu
- *
+ *  RestTemplate 拦截器，传递group id
  *  date 2019/8/6 10:25
  */
 @Slf4j
@@ -22,7 +22,7 @@ public class RestTemplateIntercetor implements ClientHttpRequestInterceptor {
 
     @Override
     public ClientHttpResponse intercept(HttpRequest httpRequest, byte[] bytes, ClientHttpRequestExecution clientHttpRequestExecution) throws IOException {
-        log.info("TCC: RestTemplateIntercetor ");
+        log.debug("TCC: RestTemplateIntercetor ");
         Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();
         if(null==transaction)return clientHttpRequestExecution.execute(httpRequest,bytes);
         String groupId = transaction.getTransactionXid().getGlobalTccTransactionId();

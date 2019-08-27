@@ -2,6 +2,11 @@ package org.micro.tcc.common.util;
 
 import org.micro.tcc.common.constant.Constant;
 
+/**
+*@author jeff.liu
+*@desc   协调工具
+*@date 2019/8/27
+*/
 public class CoordinatorUtils {
 
     public static String getNodeGroupId(String transactionPath){

@@ -5,15 +5,29 @@ import org.micro.tcc.common.constant.TransactionStatus;
 
 import java.io.Serializable;
 
-
+/**
+*@author jeff.liu
+*@desc   事务参与者
+*@date 2019/8/27
+*/
 public class TransactionMember implements Serializable {
 
 
     private static final long serialVersionUID = 3284377143420086541L;
+
+    /**
+     * 全局id
+     */
     private TransactionXid xid;
 
+    /**
+     * 确认方法调用者
+     */
     private Invocation confirmInvocation;
 
+    /**
+     * 取消方法调用者
+     */
     private Invocation cancelInvocation;
 
     private MethodReflect methodReflect = new MethodReflect();

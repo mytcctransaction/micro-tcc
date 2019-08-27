@@ -2,6 +2,7 @@ package org.micro.tcc.tc.repository;
 
 import lombok.extern.slf4j.Slf4j;
 import org.micro.tcc.common.constant.Constant;
+import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.core.TransactionRepository;
 import org.micro.tcc.common.core.TransactionXid;
@@ -21,7 +22,7 @@ import java.util.*;
 
 /**
  *@author jeff.liu
- *   描述
+ *   redis 分布式事务日志保存，用于异常恢复
  * date 2019/7/31
  */
 @Slf4j
@@ -85,6 +86,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
 
     @Override
     public boolean create(Transaction transaction) {
+        createGroupMember(transaction);
         Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
         boolean b=redisTemplate.opsForHash().putIfAbsent(Constant.getTransactionMapKey(),getTransactionXid(transaction),transMap);
 
@@ -96,10 +98,12 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     public boolean createGroupMemberForCancel(Transaction transaction) {
         String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
         int pageNo=20;
-        List<String> appNameList=redisTemplate.opsForList().range(Constant.TRANSACTION_GROUP+groupId,0,pageNo);
+        Set<String> appNameList=redisTemplate.opsForZSet().range(Constant.TRANSACTION_GROUP+groupId,0,pageNo);
         for(String appName:appNameList){
-            String key=CoordinatorUtils.getAppName(appName);
-            redisTemplate.opsForList().leftPush(Constant.TRANSACTION_GROUP+groupId,key+Constant.DELIMIT+Constant.CANCEL);
+            if(appName.indexOf(Constant.CONFIRM)!=-1){
+                String key=CoordinatorUtils.getAppName(appName);
+                redisTemplate.opsForZSet().add(Constant.TRANSACTION_GROUP+groupId,key+Constant.DELIMIT+Constant.CANCEL,2);
+            }
 
         }
       return true;
@@ -110,7 +114,7 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     @Override
     public boolean createGroupMember(Transaction transaction) {
         String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
-        redisTemplate.opsForList().leftPush(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CONFIRM);
+        redisTemplate.opsForZSet().add(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CONFIRM,1);
         return true;
     }
 
@@ -154,7 +158,22 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
     @Override
     public boolean delete(Transaction transaction) {
         //Map<byte[], byte[]> transMap= TransactionSerializer.serialize(serializer, transaction);
+        String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
         redisTemplate.opsForHash().delete(Constant.getTransactionMapKey(),getTransactionXid(transaction));
+        switch (TransactionStatus.valueOf(transaction.getStatus().value())){
+            case TRY:
+                break;
+            case CONFIRM:
+                redisTemplate.opsForZSet().remove(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CONFIRM);
+                break;
+            case CANCEL:
+                redisTemplate.opsForZSet().remove(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CONFIRM);
+                redisTemplate.opsForZSet().remove(Constant.TRANSACTION_GROUP+groupId,Constant.getAppName()+Constant.DELIMIT+Constant.CANCEL);
+                break;
+            default:
+                break;
+        }
+
         return true;
     }
 
@@ -184,6 +203,20 @@ public class RedisSpringTransactionRepository implements TransactionRepository {
         }else{
             return null;
         }
+    }
+
+    @Override
+    public List<String> findTransactionGroupAll() {
+
+        RedisCallback<?> redisCallback =new RedisCallback<Object>() {
+            @Override
+            public Object doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                redisConnection.scan(ScanOptions.scanOptions().match("*").count(reCoverCount).build());
+                return null;
+            }
+        };
+        redisTemplate.execute(redisCallback);
+        return null;
     }
 
 

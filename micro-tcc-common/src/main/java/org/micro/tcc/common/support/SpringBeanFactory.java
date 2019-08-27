@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  *@author jeff.liu
- *   描述
+ *   描述 spring bean 工厂
  * date 2019/7/31
  */
 @Component

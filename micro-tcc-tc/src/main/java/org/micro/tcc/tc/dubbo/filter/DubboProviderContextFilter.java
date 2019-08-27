@@ -16,7 +16,7 @@ import org.micro.tcc.tc.component.TransactionManager;
 
 /**
 *@author jeff.liu
-*   描述
+*  dubbo提供者拦截器
 * date 2019/8/5
 */
 @Activate
@@ -25,7 +25,7 @@ public class DubboProviderContextFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         // 处理group id
-        log.info("TCC:Dubbo provider filter ");
+        log.debug("TCC:Dubbo provider filter ");
         String groupId = RpcContext.getContext().getAttachment(Constant.GLOBAL_TCCTRANSACTION_ID);
         String status = RpcContext.getContext().getAttachment(Constant.TCCTRANSACTION_STATUS);
         if(StringUtils.isNotEmpty(groupId)&&StringUtils.isNotEmpty(status)){

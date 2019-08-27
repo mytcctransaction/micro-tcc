@@ -4,7 +4,7 @@ import java.util.Set;
 
 /**
  *@author jeff.liu
- *   描述
+ *   事务恢复配置接口
  * date 2019/7/31
  */
 public interface RecoverConfig {

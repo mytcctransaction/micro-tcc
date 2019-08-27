@@ -5,6 +5,11 @@ import com.google.common.cache.CacheBuilder;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+*@author jeff.liu
+*@desc   定长和定时清理的缓存
+*@date 2019/8/27
+*/
 public class FixSizeCacheMap {
 
     private static final Cache<String, Object> cache = CacheBuilder.newBuilder().maximumSize(1000).expireAfterAccess(30L, TimeUnit.MINUTES).build();

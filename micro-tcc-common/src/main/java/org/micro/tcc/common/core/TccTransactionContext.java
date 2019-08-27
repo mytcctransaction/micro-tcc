@@ -4,7 +4,11 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
+/**
+*@author jeff.liu
+*@desc   事务内容
+*@date 2019/8/27
+*/
 public class TccTransactionContext implements Serializable {
 
 

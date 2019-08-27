@@ -9,7 +9,7 @@ import org.springframework.core.annotation.Order;
 import java.util.Map;
 
 /**
- * 资源文件读取工具
+ * spring资源文件读取工具
  *
  * @author jeff.liu
  *  date 2016年10月15日

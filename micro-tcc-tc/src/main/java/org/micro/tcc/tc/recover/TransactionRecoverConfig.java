@@ -4,6 +4,11 @@ package org.micro.tcc.tc.recover;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+*@author jeff.liu
+*@desc   事务恢复配置
+*@date 2019/8/27
+*/
 @Component
 public class TransactionRecoverConfig implements RecoverConfig {
 

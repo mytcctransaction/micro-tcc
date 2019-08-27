@@ -51,7 +51,7 @@ public class RecoverScheduledZookeeperJob implements ApplicationRunner {
             scheduler.scheduleJob(jobDetail.getObject(), cronTrigger.getObject());
 
             scheduler.start();
-            log.info("TCC:开启处理Zookeeper事件定时任务");
+            log.debug("TCC:开启处理Zookeeper事件定时任务");
 
         } catch (Exception e) {
             log.error("TCC:处理Zookeeper事件定时任务发生异常！",e);

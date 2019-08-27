@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream;
 
 /**
  *@author jeff.liu
- *   描述
+ *   描述 kryo 序列化
  * date 2019/7/31
  */
 public class KryoPoolSerializer<T> implements ObjectSerializer<T> {

@@ -18,7 +18,7 @@ import org.micro.tcc.tc.component.TransactionManager;
 
 /**
 *@author jeff.liu
-*   描述
+*   dubbo 消费者拦截器
 * date 2019/8/5
 */
 @Activate
@@ -27,7 +27,7 @@ public class DubboConsumerContextFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        log.info("TCC: Consumer filter ");
+        log.debug("TCC: Consumer filter ");
         Map<String, String> context = new HashMap<>();
         //处理group id
         Transaction transaction=TransactionManager.getInstance().getCurrentTransaction();

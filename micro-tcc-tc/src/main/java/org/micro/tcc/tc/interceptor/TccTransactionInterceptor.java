@@ -15,7 +15,7 @@ import org.micro.tcc.tc.component.CoordinatorWatcher;
 
 /**
  *@author jeff.liu
- *   描述
+ *  tcc 事务主要拦截器，主要拦截器
  * date 2019/7/31
  */
 @Component
@@ -60,8 +60,7 @@ public class TccTransactionInterceptor {
         try {
             //transaction = transactionManager.begin(tccMethodContext.getUniqueIdentity());
             transaction = transactionManager.begin();
-            transactionManager.addGroupForMember(transaction);
-
+            //transactionManager.addGroupForMember(transaction);
             try {
                 returnValue = tccMethodContext.proceed();
                 transactionManager.saveConfirmOrder(transaction);
@@ -101,7 +100,7 @@ public class TccTransactionInterceptor {
             switch (TransactionStatus.valueOf(tccMethodContext.getTransactionContext().getStatus())) {
                 case TRY:
                     transaction = transactionManager.propagationSupportsStart(tccMethodContext.getTransactionContext());
-                    transactionManager.addGroupForMember(transaction);
+                    //transactionManager.addGroupForMember(transaction);
                     try {
                         returnObj= tccMethodContext.proceed();
                         transactionManager.saveConfirmOrder(transaction);

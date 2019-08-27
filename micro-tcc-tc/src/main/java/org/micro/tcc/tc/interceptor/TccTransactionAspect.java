@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 /**
  *@author jeff.liu
- *   描述
+ *   tcc 事务拦截器，主要拦截器
  * date 2019/7/31
  */
 @Component
@@ -35,7 +35,7 @@ public  class TccTransactionAspect {
 
     @Around("transactionMethod()")
     public Object interceptTransactionMethod(ProceedingJoinPoint pjp) throws Throwable {
-        log.info("TCC:TransactionAspect ");
+        log.debug("TCC:TransactionAspect ");
         return tccTransactionInterceptor.interceptTransactionMethod(pjp);
     }
 

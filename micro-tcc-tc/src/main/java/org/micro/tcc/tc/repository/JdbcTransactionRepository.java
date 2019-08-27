@@ -19,7 +19,7 @@ import java.util.List;
 
 /**
  *@author jeff.liu
- *   描述
+ *   jdbc 日志保存
  * date 2019/7/31
  */
 public class JdbcTransactionRepository implements TransactionRepository {
@@ -176,6 +176,11 @@ public class JdbcTransactionRepository implements TransactionRepository {
 
     @Override
     public Transaction findByGroupId(String gid) {
+        return null;
+    }
+
+    @Override
+    public List<String> findTransactionGroupAll() {
         return null;
     }
 

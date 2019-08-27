@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  *@author jeff.liu
- *   描述
+ *   事务序列化工具
  * date 2019/7/31
  */
 public class TransactionSerializer {

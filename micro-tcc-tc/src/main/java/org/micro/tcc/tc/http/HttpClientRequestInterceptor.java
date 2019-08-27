@@ -16,7 +16,7 @@ import java.io.IOException;
 
 /**
  * @author jeff.liu
- *
+ * rest 拦截器 ，传递group id
  *  date 2019/8/6 10:18
  */
 @Slf4j
@@ -25,7 +25,7 @@ public class HttpClientRequestInterceptor implements HttpRequestInterceptor {
 
     @Override
     public void process(HttpRequest httpRequest, HttpContext httpContext) throws HttpException, IOException {
-        log.info("TCC:HttpClientRequestInterceptor ");
+        log.debug("TCC:HttpClientRequestInterceptor ");
         HttpCoreContext adapt = HttpCoreContext.adapt(httpContext);
         HttpHost targetHost = adapt.getTargetHost();
         Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();

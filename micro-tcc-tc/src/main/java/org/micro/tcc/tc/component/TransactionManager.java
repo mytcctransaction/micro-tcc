@@ -21,23 +21,30 @@ import java.util.concurrent.*;
 /**
 *@author jeff.liu
 *@desc   事务管理器
+ *分布式事务统一管理，主要和协调者交互
 *@date 2019/8/23
 */
 @Slf4j
 public class TransactionManager {
 
-    static final Logger logger = LoggerFactory.getLogger(TransactionManager.class);
 
+    /**
+     * 事务日志保存
+     */
     private TransactionRepository transactionRepository;
 
     private Cache<String, Transaction> TRANSACTION_CACHE = CacheBuilder.newBuilder().maximumSize(500000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
 
+    /**
+     * 当前线程
+     */
     private static final ThreadLocal<Deque<Transaction>> CURRENT = new ThreadLocal<Deque<Transaction>>();
 
+    /**
+     * 分布式事务线程组
+     */
     private ExecutorService executorService;
     private ExecutorService futureEcutorService;
-
-    final CountDownLatch latch = new CountDownLatch(1);
 
     public void setTransactionRepository(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
@@ -69,25 +76,10 @@ public class TransactionManager {
 
     }
 
-    /**
-     * 暂停线程执行
-     */
-    public void await(){
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            log.error(e.getMessage(),e);
-        }
-    }
 
-    /**
-     * 唤醒线程
-     */
-    public void countDown(){
-        latch.countDown();
-    }
-    public void setExecutorService(ExecutorService executorService) {
-        this.executorService = executorService;
+    public ExecutorService getExecutorService()
+    {
+        return executorService;
     }
 
     public String getTransactionGlobalId(){
@@ -120,18 +112,7 @@ public class TransactionManager {
         return transaction;
     }
 
-    /**
-     * 分支事务开启
-     * @param transaction
-     * @return
-     */
-    public Transaction beginEnd(Transaction transaction) {
-        transaction.changeStatus(TransactionStatus.CONFIRM);
-        transactionRepository.update(transaction);
-        registerTransaction(transaction);
-        putToCache(transaction);
-        return transaction;
-    }
+
 
     public Transaction propagationSupportsStart(TccTransactionContext transactionContext) {
         Transaction transaction = new Transaction(transactionContext);
@@ -187,7 +168,7 @@ public class TransactionManager {
         Transaction transaction = null;
         try {
             if(!isExitGlobalTransaction(groupId)){
-                log.info("TCC:服务器不存在globalTransactionId:{}",groupId);
+                log.debug("TCC:服务器不存在globalTransactionId:{}",groupId);
                 return;
             }
             int _status = Integer.parseInt(status);
@@ -339,7 +320,7 @@ public class TransactionManager {
                     }
                 });
             } catch (Throwable rollbackException) {
-                logger.warn("TCC:transaction async rollback failed, recovery job will try to rollback later.", rollbackException);
+                log.warn("TCC:transaction async rollback failed, recovery job will try to rollback later.", rollbackException);
                 throw new CancelException(rollbackException);
             }
         } else {
@@ -355,8 +336,15 @@ public class TransactionManager {
         try {
             transaction.commit();
             transactionRepository.delete(transaction);
+            switch (TransactionType.valueOf(transaction.getTransactionType().value())){
+                case ROOT:
+                    CoordinatorWatcher.getInstance().deleteDataNodeForConfirm(transaction);
+                    break;
+                default:
+                    break;
+            }
         } catch (Throwable commitException) {
-            logger.warn("TCC: transaction confirm failed.", commitException);
+            log.warn("TCC: transaction confirm failed.", commitException);
             throw new ConfirmException(commitException);
         }
     }
@@ -369,8 +357,15 @@ public class TransactionManager {
         try {
             transaction.rollback();
             transactionRepository.delete(transaction);
+            switch (TransactionType.valueOf(transaction.getTransactionType().value())){
+                case ROOT:
+                    CoordinatorWatcher.getInstance().deleteDataNodeForCancel(transaction);
+                    break;
+                default:
+                    break;
+            }
         } catch (Throwable rollbackException) {
-            logger.error("TCC: transaction rollback failed.", rollbackException);
+            log.error("TCC: transaction rollback failed.", rollbackException);
             //throw new CancelException(rollbackException);
         }
     }
@@ -468,9 +463,13 @@ public class TransactionManager {
     }
 
     public void saveConfirmOrder(Transaction transaction) throws Exception{
-        transaction.changeStatus(TransactionStatus.CONFIRM);
-        transactionRepository.update(transaction);
-
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                transaction.changeStatus(TransactionStatus.CONFIRM);
+                transactionRepository.update(transaction);
+            }
+        });
     }
     public void sendConfirmOrderToMember(Transaction transaction) throws Exception{
         transaction.changeStatus(TransactionStatus.CONFIRM);
@@ -479,8 +478,12 @@ public class TransactionManager {
     }
 
     public void sendCancelOrderToMember(Transaction transaction) throws Exception{
-
-        transactionRepository.createGroupMemberForCancel(transaction);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                transactionRepository.createGroupMemberForCancel(transaction);
+            }
+        });
         transaction.changeStatus(TransactionStatus.CANCEL);
         CoordinatorWatcher.getInstance().modify(transaction);
 
@@ -492,8 +495,12 @@ public class TransactionManager {
      * @throws Exception
      */
     public void addGroupForMember(Transaction transaction) throws Exception{
-        transactionRepository.createGroupMember(transaction);
+        executorService.submit(new Runnable() {
+            @Override
+            public void run() {
+                transactionRepository.createGroupMember(transaction);
+            }
+        });
         //CoordinatorWatcher.getInstance().add(transaction);
-
     }
 }

@@ -13,9 +13,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 
 /**
- * redis的配置文件，供参考，最好是不要放在这里面，而是作为单独包
- *
- * */
+*@author jeff.liu
+*@desc   redis 配置
+*@date 2019/8/27
+*/
 @Configuration
 public class RedisConfig extends CachingConfigurerSupport {
 

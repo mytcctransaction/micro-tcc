@@ -39,6 +39,7 @@ public class MicroTccSpringConfig {
     }*/
     @Bean
     public CoordinatorWatcher coordinatorWatcher() throws Exception {
+        System.setProperty("jute.maxbuffer", String.valueOf(4096 * 1024 * 3));
         CoordinatorWatcher coordinatorWatcher=new CoordinatorWatcher();
         //coordinatorWatcher.start();
         return coordinatorWatcher;
@@ -85,7 +86,7 @@ public class MicroTccSpringConfig {
     @Bean
     public RequestInterceptor requestInterceptor() {
         return requestTemplate -> {
-            log.info("TCC:Feign interceptor ");
+            log.debug("TCC:Feign interceptor ");
             Transaction transaction = TransactionManager.getInstance().getCurrentTransaction();
             if(null==transaction){
                 return;

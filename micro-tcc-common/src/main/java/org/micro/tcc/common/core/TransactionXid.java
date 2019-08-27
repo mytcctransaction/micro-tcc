@@ -7,6 +7,11 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.UUID;
 
+/**
+*@author jeff.liu
+*@desc   全局id
+*@date 2019/8/27
+*/
 public class TransactionXid implements Serializable {
 
 
@@ -40,13 +45,10 @@ public class TransactionXid implements Serializable {
             try {
                 branchUuid = UUID.fromString(uniqueIdentity.toString());
             } catch (IllegalArgumentException e) {
-
                 byte[] bytes = uniqueIdentity.toString().getBytes();
-
                 if (bytes.length > 16) {
                     throw new IllegalArgumentException("UniqueIdentify is illegal, the value is :" + uniqueIdentity.toString());
                 }
-
                 branchUuid = UUID.nameUUIDFromBytes(bytes);
             }
         }
@@ -66,10 +68,8 @@ public class TransactionXid implements Serializable {
 
     @Override
     public String toString() {
-
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(globalTccTransactionId);
-
         return stringBuilder.toString();
     }
 

@@ -12,6 +12,11 @@ import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 import org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean;
 
 
+/**
+*@author jeff.liu
+*@desc   事务恢复定时任务
+*@date 2019/8/27
+*/
 @Slf4j
 public class RecoverScheduledJob implements ApplicationRunner {
 
@@ -44,9 +49,8 @@ public class RecoverScheduledJob implements ApplicationRunner {
             SchedulerFactory schedulerfactory = new StdSchedulerFactory();
             scheduler=schedulerfactory.getScheduler();
             scheduler.scheduleJob(jobDetail.getObject(), cronTrigger.getObject());
-
             scheduler.start();
-            log.info("TCC:开启分布式事务定时任务");
+            log.info("TCC:开启分布式事务定时恢复任务");
 
         } catch (Exception e) {
             log.error("TCC:定时commit/cancel事务发生异常！",e);

@@ -2,7 +2,7 @@ package org.micro.tcc.common.serializer;
 
 /**
  *@author jeff.liu
- *   描述
+ *   描述 序列号接口
  * date 2019/7/31
  */
 public interface ObjectSerializer<T> {

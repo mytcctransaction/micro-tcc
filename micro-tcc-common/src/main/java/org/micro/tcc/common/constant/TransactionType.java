@@ -2,10 +2,20 @@
 
 package org.micro.tcc.common.constant;
 
-
+/**
+*@author jeff.liu
+*@desc   事务类型
+*@date 2019/8/27
+*/
 public enum TransactionType {
 
+    /**
+     * 发起者
+     */
     ROOT(1),
+    /**
+     * 参与者
+     */
     BRANCH(2);
     int id;
 

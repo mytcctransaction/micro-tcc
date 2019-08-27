@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *@author jeff.liu
- *   描述
+ *   描述 bean工厂
  * date 2019/7/31
  */
 public final class BeanFactoryBuilder {
