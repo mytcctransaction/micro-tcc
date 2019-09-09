@@ -1,6 +1,8 @@
 package org.micro.tcc.common.core;
 
 
+import org.micro.tcc.common.util.SnowFlake;
+
 import javax.transaction.xa.Xid;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -24,8 +26,8 @@ public class TransactionXid implements Serializable {
      * 生成全局唯一id
      */
     public TransactionXid() {
-        String gid=UUID.randomUUID().toString();
-        globalTccTransactionId=gid;
+        String groupId= SnowFlake.get().nextGroupId();
+        globalTccTransactionId=groupId;
 
     }
     public String getGlobalTccTransactionId() {

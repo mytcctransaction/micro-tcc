@@ -6,7 +6,7 @@ import org.apache.http.HttpRequestInterceptor;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.tc.http.HttpClientRequestInterceptor;
-import org.micro.tcc.tc.http.RestTemplateIntercetor;
+import org.micro.tcc.tc.http.RestTemplateInterceptor;
 import org.micro.tcc.tc.recover.RecoverScheduledJob;
 import org.micro.tcc.tc.recover.RecoverScheduledZookeeperJob;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,19 +29,11 @@ import java.util.Collections;
 @Slf4j
 public class MicroTccSpringConfig {
 
-    @Autowired
-    private  RestTemplate restTemplate;
 
-
-    /*@Autowired
-    MicroTccSpringConfig(RestTemplate restTemplate){
-        this.restTemplate=restTemplate;
-    }*/
     @Bean
     public CoordinatorWatcher coordinatorWatcher() throws Exception {
         System.setProperty("jute.maxbuffer", String.valueOf(4096 * 1024 * 3));
         CoordinatorWatcher coordinatorWatcher=new CoordinatorWatcher();
-        //coordinatorWatcher.start();
         return coordinatorWatcher;
     }
 
@@ -60,28 +52,24 @@ public class MicroTccSpringConfig {
 
     @Bean
     @ConditionalOnClass(HttpRequestInterceptor.class)
-    public HttpRequestInterceptor HttpClientRequestInterceptor(){
+    public HttpRequestInterceptor httpClientRequestInterceptor(){
         return  new HttpClientRequestInterceptor();
     }
 
     @Bean
     @ConditionalOnClass(ClientHttpRequestInterceptor.class)
     public ClientHttpRequestInterceptor clientHttpRequestInterceptor(){
-        return  new RestTemplateIntercetor();
+        return  new RestTemplateInterceptor();
     }
 
-    @Bean
+    /*@Bean
     //@ConditionalOnClass
     @ConditionalOnBean(ClientHttpRequestInterceptor.class)
     public RestTemplate restTemplate(ClientHttpRequestInterceptor clientHttpRequestInterceptor){
-        if(restTemplate!=null){
-            restTemplate.setInterceptors(Collections.singletonList(clientHttpRequestInterceptor));
-            return restTemplate;
-        }
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.setInterceptors(Collections.singletonList(clientHttpRequestInterceptor));
         return restTemplate;
-    }
+    }*/
 
     @Bean
     public RequestInterceptor requestInterceptor() {

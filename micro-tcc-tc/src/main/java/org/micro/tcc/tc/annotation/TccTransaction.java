@@ -1,5 +1,6 @@
-package org.micro.tcc.common.annotation;
+package org.micro.tcc.tc.annotation;
 
+import org.micro.tcc.common.constant.Model;
 import org.micro.tcc.common.constant.Propagation;
 
 import java.lang.annotation.ElementType;
@@ -23,10 +24,12 @@ public @interface TccTransaction {
 
     public String cancelMethod() default "";
 
-    public boolean asyncTransaction() default false;
+    public Model model() default Model.AT;
 
     public boolean asyncConfirm() default false;
 
     public boolean asyncCancel() default false;
+
+    Class<? extends Throwable>[] rollbackFor() default {};
 
 }

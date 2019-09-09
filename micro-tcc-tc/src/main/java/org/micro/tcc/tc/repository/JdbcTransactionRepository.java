@@ -140,6 +140,11 @@ public class JdbcTransactionRepository implements TransactionRepository {
     }
 
     @Override
+    public boolean createGroupMemberForClientCancel(Transaction transaction) {
+        return false;
+    }
+
+    @Override
     public boolean createGroupMemberForCancel(Transaction transaction) {
         return true;
     }
@@ -147,6 +152,11 @@ public class JdbcTransactionRepository implements TransactionRepository {
     @Override
     public boolean createGroupMember(Transaction transaction) {
         return true;
+    }
+
+    @Override
+    public boolean isCanceling(Transaction transaction) {
+        return false;
     }
 
     @Override
@@ -162,6 +172,11 @@ public class JdbcTransactionRepository implements TransactionRepository {
     @Override
     public boolean delete(Transaction transaction) {
         return true;
+    }
+
+    @Override
+    public boolean judgeIdempotent(Transaction transaction) {
+        return false;
     }
 
     @Override

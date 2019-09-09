@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 */
 public class FixSizeCacheMap {
 
-    private static final Cache<String, Object> cache = CacheBuilder.newBuilder().maximumSize(1000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
+    private static volatile Cache<String, Object> cache = CacheBuilder.newBuilder().maximumSize(1000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
 
     private static FixSizeCacheMap fixSizeCacheMap =new FixSizeCacheMap();
 

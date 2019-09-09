@@ -10,7 +10,6 @@ import org.apache.http.protocol.HttpCoreContext;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.tc.component.TransactionManager;
-import org.springframework.http.HttpHeaders;
 
 import java.io.IOException;
 

@@ -28,7 +28,7 @@ public  class TccTransactionAspect {
         this.tccTransactionInterceptor = tccTransactionInterceptor;
     }
 
-    @Pointcut("@annotation(org.micro.tcc.common.annotation.TccTransaction)")
+    @Pointcut("@annotation(org.micro.tcc.tc.annotation.TccTransaction)")
     public void transactionMethod() {
 
     }

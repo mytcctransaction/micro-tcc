@@ -2,12 +2,12 @@ package org.micro.tcc.tc.interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.micro.tcc.common.annotation.TccTransaction;
+import org.micro.tcc.tc.annotation.TccTransaction;
 import org.micro.tcc.common.core.TransactionXid;
 import org.micro.tcc.common.core.Invocation;
 import org.micro.tcc.common.core.TransactionMember;
 import org.micro.tcc.common.core.Transaction;
-import org.micro.tcc.common.util.ReflectionUtils;
+import org.micro.tcc.tc.util.ReflectionUtils;
 import org.micro.tcc.tc.component.TransactionManager;
 
 
@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 @Slf4j
 public class TccCoordinatorInterceptor {
 
-    private TransactionManager transactionManager=TransactionManager.getInstance();
+    private TransactionManager transactionManager= TransactionManager.getInstance();
 
 
     public void setTransactionManager(TransactionManager transactionManager) {
@@ -42,8 +42,8 @@ public class TccCoordinatorInterceptor {
                     break;
                 case CANCEL:
                     break;
-                    default:
-                        break;
+                default:
+                    break;
             }
         }
 

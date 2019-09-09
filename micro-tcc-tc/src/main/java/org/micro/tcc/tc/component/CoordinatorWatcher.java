@@ -1,6 +1,6 @@
 package org.micro.tcc.tc.component;
 
-import com.alibaba.fastjson.JSON;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.RetryPolicy;
@@ -12,13 +12,11 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.data.Stat;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.constant.TransactionType;
-import org.micro.tcc.common.core.TccTransactionContext;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.constant.TransactionStatus;
-import org.micro.tcc.common.core.TransactionXid;
-import org.micro.tcc.common.exception.NoExistedTransactionException;
 import org.micro.tcc.common.util.CoordinatorUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
@@ -28,11 +26,7 @@ import org.springframework.boot.ApplicationRunner;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  *  zookeeper-分布式事务管理器
@@ -58,12 +52,26 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     private static final String TRANSACTION_GROUP_PATH = "/DistributedTransaction/DistributedTransactionGroup";
 
-
     private TransactionManager transactionManager=null;
+
     private static CuratorFramework client;
 
+    @Value("${micro.tcc.coordinator.executorService.corePoolSize:10}")
+    private int corePoolSize ;
+    @Value("${micro.tcc.coordinator.executorService.maximumPoolSize:30}")
+    private int maximumPoolSize ;
+    @Value("${micro.tcc.coordinator.executorService.keepAliveTime:60}")
+    private long keepAliveTime;
 
+    /**
+     * 线程池初始化
+     *
+     * corePoolSize 核心线程池大小----10
+     * maximumPoolSize 最大线程池大小----30
+     **/
+    private ExecutorService nodeEcutorService=  null;
     PathChildrenCache childrenCache=null;
+
     private static  CoordinatorWatcher coordinatorWatcher=new CoordinatorWatcher();
 
     public static CoordinatorWatcher getInstance(){
@@ -94,7 +102,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
          * 创建会话
          * */
         client.start();
-
         client.getConnectionStateListenable().addListener(new ConnectionStateListener() {
             @Override
             public void stateChanged(CuratorFramework client, ConnectionState state) {
@@ -135,7 +142,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
 
     private void addPathChildWatch() throws Exception{
         // PathChildrenCache: 监听数据节点的增删改，可以设置触发的事件
-        childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true,false,this.getTransactionManager().getExecutorService());
+        childrenCache = new PathChildrenCache(client, TRANSACTION_PATH, true,false,nodeEcutorService);
         /**
          * StartMode: 初始化方式
          * POST_INITIALIZED_EVENT：异步初始化，初始化之后会触发事件
@@ -143,12 +150,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
          * BUILD_INITIAL_CACHE：同步初始化
          */
         childrenCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
-        // 列出子节点数据列表，需要使用BUILD_INITIAL_CACHE同步初始化模式才能获得，异步是获取不到的
-        //List<ChildData> childDataList = childrenCache.getCurrentData();
-        /*    log.debug("当前节点的子节点详细数据列表：");
-        for (ChildData childData : childDataList) {
-            log.debug("\t* 子节点路径：" + new String(childData.getPath()) + "，该节点的数据为：" + new String(childData.getData()));
-        }*/
        // 添加事件监听器
        childrenCache.getListenable().addListener(new PathChildrenCacheListener() {
             @Override
@@ -157,25 +158,25 @@ public class CoordinatorWatcher implements ApplicationRunner {
                 if (event.getType().equals(PathChildrenCacheEvent.Type.INITIALIZED)) {  // 子节点初始化时触发
                     log.debug("TCC:子节点初始化成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {  // 添加子节点时触发
-                    log.debug("TCC:zk子节点：" + event.getData().getPath() + " 添加成功");
+                    log.debug("TCC:node子节点：" + event.getData().getPath() + " 添加成功");
                     getTransactionManager().process(CoordinatorUtils.getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_REMOVED)) {  // 删除子节点时触发
-                    log.debug("TCC:zk子节点：" + event.getData().getPath() + " 删除成功");
+                    log.debug("TCC:node子节点：" + event.getData().getPath() + " 删除成功");
                 } else if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_UPDATED)) {  // 修改子节点数据时触发
-                    log.debug("TCC:zk子节点：" + event.getData().getPath() + " 数据更新成功");
+                    log.debug("TCC:node子节点：" + event.getData().getPath() + " 数据更新成功");
                     getTransactionManager().process(CoordinatorUtils.getNodeGroupId(ZKPaths.getNodeFromPath(event.getData().getPath())),new String(event.getData().getData()));
                 }
             }
-        },this.getTransactionManager().getExecutorService());
+        },nodeEcutorService);
 
     }
-
-
-
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
         start();
+        ThreadFactory threadFactory= new ThreadFactoryBuilder().setNameFormat("Tcc-CD-Pool-%d").build();
+        nodeEcutorService =  new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),threadFactory);
+
     }
 
     /**
@@ -185,10 +186,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
     public void processTransactionStart(){
         try{
 
-           /*   future.get(1000*3, TimeUnit.SECONDS);
-            if(!future.isDone()){
-                return;
-            }*/
             log.debug("TCC:开始定时处理zookeeper事件");
             String appGroupPath=TRANSACTION_GROUP_PATH;
             List<String> list=client.getChildren().forPath(appGroupPath);
@@ -216,7 +213,6 @@ public class CoordinatorWatcher implements ApplicationRunner {
     private void jobTransactionProcess(String k,Map<String, ChildData> childDataMap){
         String groupId=CoordinatorUtils.getNodeGroupId(k);
         ChildData childData=childDataMap.get(k);
-        //String status=new String(childData.getData());
         String status="";
         if(null!=childData){
             if(childData.getData()!=null){
@@ -246,14 +242,11 @@ public class CoordinatorWatcher implements ApplicationRunner {
             case ROOT:
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
                         forPath(appGroupPath,(Constant.getAppName()).getBytes());
-                //client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(appPath+DELIMIT+Constant.TRY,(String.valueOf(status)).getBytes());
                 break;
             case BRANCH:
                 client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
                         forPath(appGroupPath,(Constant.getAppName()).getBytes());
-               // client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(TRANSACTION_GROUP_PATH+"/"+globalTccTransactionId+"/"+Constant.getAppName(),(Constant.getAppName()).getBytes());
-                //client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(appPath+DELIMIT+Constant.TRY,(String.valueOf(status)).getBytes());
-                break;
+               break;
             default:
                 break;
         }
@@ -268,12 +261,19 @@ public class CoordinatorWatcher implements ApplicationRunner {
             case TRY:
                 break;
             case CONFIRM:
-                client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                        forPath(appPath+Constant.CONFIRM,(String.valueOf(status)).getBytes());
+                Stat stat=client.checkExists().forPath(appPath+Constant.CONFIRM);
+                if(null==stat) {
+                    client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
+                            forPath(appPath + Constant.CONFIRM, (String.valueOf(status)).getBytes());
+                }
                 break;
             case CANCEL:
-                client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
-                        forPath(appPath+Constant.CANCEL,(String.valueOf(status)).getBytes());
+                Stat _stat=client.checkExists().forPath(appPath+Constant.CANCEL);
+                if(null==_stat){
+                    client.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).
+                            forPath(appPath+Constant.CANCEL,(String.valueOf(status)).getBytes());
+                }
+
                 break;
             default:
                 break;
@@ -292,7 +292,7 @@ public class CoordinatorWatcher implements ApplicationRunner {
         client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
         appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT+Constant.CANCEL;
         client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
-        log.debug("TCC:delete node path:"+appPath);
+
     }
 
     /**
@@ -306,15 +306,11 @@ public class CoordinatorWatcher implements ApplicationRunner {
         String appPath=TRANSACTION_PATH+"/" +globalTccTransactionId+Constant.DELIMIT+Constant.CONFIRM;
         client.delete().deletingChildrenIfNeeded().inBackground().forPath(appPath);
 
-        log.debug("TCC:delete node path:"+appPath);
     }
     public static void main(String[] args){
-        try {
-          Thread.sleep(2000);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ThreadFactory threadFactory= new ThreadFactoryBuilder().setNameFormat("TransactionManager-ThreadPool-%d").build();
+        ExecutorService executorService =  new ThreadPoolExecutor(1, 1, 1, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),threadFactory);
+        System.out.println("333");
     }
 
 }

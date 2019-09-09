@@ -3,11 +3,13 @@ package org.micro.tcc.tc.interceptor;
 import org.aspectj.lang.ProceedingJoinPoint;
 
 import org.micro.tcc.common.constant.Propagation;
-import org.micro.tcc.common.annotation.TccTransaction;
+
 import org.micro.tcc.common.core.TccTransactionContext;
-import org.micro.tcc.common.annotation.TccIdentity;
+
 import org.micro.tcc.common.constant.MethodType;
-import org.micro.tcc.common.util.ReflectionUtils;
+import org.micro.tcc.tc.util.ReflectionUtils;
+import org.micro.tcc.tc.annotation.TccIdentity;
+import org.micro.tcc.tc.annotation.TccTransaction;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;

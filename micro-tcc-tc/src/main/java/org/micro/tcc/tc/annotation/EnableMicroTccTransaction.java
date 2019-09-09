@@ -1,5 +1,6 @@
-package org.micro.tcc.tc.component;
+package org.micro.tcc.tc.annotation;
 
+import org.micro.tcc.tc.component.MicroTccSpringSelector;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.*;

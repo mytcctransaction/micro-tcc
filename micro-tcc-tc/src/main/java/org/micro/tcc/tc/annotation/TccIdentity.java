@@ -1,4 +1,4 @@
-package org.micro.tcc.common.annotation;
+package org.micro.tcc.tc.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

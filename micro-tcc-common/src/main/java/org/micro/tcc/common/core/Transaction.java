@@ -2,6 +2,7 @@ package org.micro.tcc.common.core;
 
 
 
+import org.micro.tcc.common.constant.Model;
 import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.constant.TransactionType;
 
@@ -22,9 +23,14 @@ public class Transaction implements Serializable {
 
     private static final long serialVersionUID = 776032890445193092L;
 
-    private String asyncConfirm="false";
+    private boolean asyncConfirm =false;
 
-    private String asyncCancel="false";
+    private boolean asyncCancel=false;
+
+    private int model= Model.AT.value();
+
+    private Class rollbackFor=Throwable.class;
+
 
     /**
      * 全局id
@@ -63,6 +69,12 @@ public class Transaction implements Serializable {
 
     }
 
+    public Transaction(TransactionXid xid,TransactionStatus status) {
+        this.xid=xid;
+        this.status=status;
+    }
+
+
     public Transaction(TccTransactionContext transactionContext) {
         this.xid = transactionContext.getXid();
         this.status = TransactionStatus.TRY;
@@ -86,7 +98,21 @@ public class Transaction implements Serializable {
         participants.add(participant);
     }
 
+    public int getModel() {
+        return model;
+    }
 
+
+    public Class getRollbackFor() {
+        return rollbackFor;
+    }
+
+    public void setRollbackFor(Class rollbackFor) {
+        this.rollbackFor = rollbackFor;
+    }
+    public void setModel(int model) {
+        this.model = model;
+    }
     public TransactionXid getTransactionXid() {
         return xid;
     }
@@ -94,19 +120,19 @@ public class Transaction implements Serializable {
         return status;
     }
 
-    public String getAsyncConfirm() {
+    public boolean getAsyncConfirm() {
         return asyncConfirm;
     }
 
-    public void setAsyncConfirm(String asyncConfirm) {
+    public void setAsyncConfirm(boolean asyncConfirm) {
         this.asyncConfirm = asyncConfirm;
     }
 
-    public String getAsyncCancel() {
+    public boolean getAsyncCancel() {
         return asyncCancel;
     }
 
-    public void setAsyncCancel(String asyncCancel) {
+    public void setAsyncCancel(boolean asyncCancel) {
         this.asyncCancel = asyncCancel;
     }
 

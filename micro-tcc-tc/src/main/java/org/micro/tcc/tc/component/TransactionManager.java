@@ -2,8 +2,10 @@ package org.micro.tcc.tc.component;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.micro.tcc.common.constant.Model;
 import org.micro.tcc.common.constant.TransactionStatus;
 import org.micro.tcc.common.constant.TransactionType;
 import org.micro.tcc.common.core.*;
@@ -11,9 +13,10 @@ import org.micro.tcc.common.exception.CancelException;
 import org.micro.tcc.common.exception.ConfirmException;
 import org.micro.tcc.common.exception.NoExistedTransactionException;
 import org.micro.tcc.common.exception.TccSystemErrorException;
+import org.micro.tcc.tc.interceptor.TccMethodContext;
 import org.micro.tcc.tc.repository.RedisSpringTransactionRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -25,6 +28,7 @@ import java.util.concurrent.*;
 *@date 2019/8/23
 */
 @Slf4j
+@Component("DistributeTransactionManager")
 public class TransactionManager {
 
 
@@ -33,43 +37,46 @@ public class TransactionManager {
      */
     private TransactionRepository transactionRepository;
 
-    private Cache<String, Transaction> TRANSACTION_CACHE = CacheBuilder.newBuilder().maximumSize(500000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
+    private volatile Cache<String, Transaction> transactionCache = CacheBuilder.newBuilder().maximumSize(100000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
+
+    private volatile Cache<String, Transaction> cancelTransactionCache = CacheBuilder.newBuilder().maximumSize(100000).expireAfterAccess(30L, TimeUnit.MINUTES).build();
+
 
     /**
      * 当前线程
      */
-    private static final ThreadLocal<Deque<Transaction>> CURRENT = new ThreadLocal<Deque<Transaction>>();
+    private static final ThreadLocal<Deque<Transaction>> currentThreadLoacl = new ThreadLocal<Deque<Transaction>>();
 
     /**
      * 分布式事务线程组
      */
     private ExecutorService executorService;
-    private ExecutorService futureEcutorService;
+
+
 
     public void setTransactionRepository(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
     }
-    public static TransactionManager transactionManager=new TransactionManager();
 
     public static TransactionManager getInstance(){
+        TransactionManager transactionManager= SpringContextAware.getBean(TransactionManager.class);
         return transactionManager;
     }
 
-    public  TransactionManager(){
+    public TransactionManager(@Value("${micro.tcc.transaction.executorService.corePoolSize:10}") int corePoolSize,
+                              @Value("${micro.tcc.transaction.executorService.maximumPoolSize:30}") int maximumPoolSize,
+                              @Value("${micro.tcc.transaction.executorService.keepAliveTime:60}") long keepAliveTime
+                                        ){
 
        if(transactionRepository==null){
             transactionRepository= RedisSpringTransactionRepository.getInstance();
         }
 
-        if (executorService == null || futureEcutorService==null) {
-
+        if (executorService == null ) {
             synchronized (TransactionManager.class) {
-
                 if (executorService == null) {
-                    executorService = Executors.newCachedThreadPool();
-                }
-                if (futureEcutorService == null) {
-                    futureEcutorService = Executors.newCachedThreadPool();
+                    ThreadFactory threadFactory= new ThreadFactoryBuilder().setNameFormat("Tcc-TM-Pool-%d").build();
+                    executorService =  new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),threadFactory);
                 }
             }
         }
@@ -104,22 +111,28 @@ public class TransactionManager {
      * @return
      * @throws Exception
      */
-    public Transaction begin() throws Exception{
+    public Transaction begin(TccMethodContext tccMethodContext) throws Exception{
         Transaction transaction = new Transaction(TransactionType.ROOT);
+        return register(tccMethodContext,transaction);
+    }
+
+    public Transaction register(TccMethodContext tccMethodContext,Transaction transaction ){
+        boolean asyncConfirm = tccMethodContext.getAnnotation().asyncConfirm();
+        boolean asyncCancel = tccMethodContext.getAnnotation().asyncCancel();
+        int model=tccMethodContext.getAnnotation().model().value();
+        transaction.setModel(model);
+        transaction.setAsyncCancel(asyncCancel);
+        transaction.setAsyncConfirm(asyncConfirm);
+        transaction.setRollbackFor(tccMethodContext.getAnnotation().rollbackFor().getClass());
         transactionRepository.create(transaction);
         registerTransaction(transaction);
         putToCache(transaction);
         return transaction;
     }
 
-
-
-    public Transaction propagationSupportsStart(TccTransactionContext transactionContext) {
-        Transaction transaction = new Transaction(transactionContext);
-        transactionRepository.create(transaction);
-        registerTransaction(transaction);
-        putToCache(transaction);
-        return transaction;
+    public Transaction propagationSupportsBegin(TccMethodContext tccMethodContext) {
+        Transaction transaction = new Transaction(tccMethodContext.getTransactionContext());
+        return register(tccMethodContext,transaction);
     }
 
     /**
@@ -133,6 +146,7 @@ public class TransactionManager {
         if (transaction != null) {
             transaction.changeStatus(TransactionStatus.valueOf(transactionContext.getStatus()));
             registerTransaction(transaction);
+            putToCache(transaction);
             return transaction;
         } else {
             throw new NoExistedTransactionException("TCC:Group id 不存在！"+transactionContext.getXid().getGlobalTccTransactionId());
@@ -146,17 +160,28 @@ public class TransactionManager {
        return false;
     }
     public void putToCache(String key,Transaction transaction){
-        TRANSACTION_CACHE.put(key,transaction);
+        transactionCache.put(key,transaction);
     }
     public void putToCache(Transaction transaction){
-        TRANSACTION_CACHE.put(transaction.getTransactionXid().getGlobalTccTransactionId(),transaction);
+        transactionCache.put(transaction.getTransactionXid().getGlobalTccTransactionId(),transaction);
     }
     public Transaction peekCache(String key){
-        return TRANSACTION_CACHE.getIfPresent(key);
+        return transactionCache.getIfPresent(key);
     }
 
     public void delCache(String key){
-        TRANSACTION_CACHE.invalidate(key);
+        transactionCache.invalidate(key);
+    }
+
+
+    public void putToCancelCache(Transaction transaction){
+        this.cancelTransactionCache.put(transaction.getTransactionXid().getGlobalTccTransactionId(),transaction);
+    }
+    public Transaction peekCancelCache(String key){
+        return cancelTransactionCache.getIfPresent(key);
+    }
+    public Transaction peekCancelCache(Transaction transaction){
+        return cancelTransactionCache.getIfPresent(transaction.getTransactionXid().getGlobalTccTransactionId());
     }
 
     /**
@@ -181,20 +206,25 @@ public class TransactionManager {
                     try {
                         transaction = propagationExistStart(transactionContext);
                         boolean asyncConfirm = false;
-                        if ("true".equals(transaction.getAsyncConfirm())) {
+                        if (transaction.getAsyncConfirm()) {
                             asyncConfirm = true;
                         }
                         commit(transaction, asyncConfirm);
                         cleanAfterConfirm(transaction);
-                    } catch (Throwable excepton) {
-                        log.error(excepton.getMessage(),excepton);
+                    } catch (Throwable exception) {
+                        log.error(exception.getMessage(),exception);
                         //主调用方commit失败，修改状态为cancel，次调用方需要全部回滚
                         if(null==transaction){
                             break;
                         }
-
-                        this.sendCancelOrderToMember(transaction);
-
+                        //AT模式，会自动回滚事务
+                        if(transaction.getModel()== Model.AT.value()){
+                            Class rollbackFor=transaction.getRollbackFor();
+                            //抛出的异常继承rollbackFor
+                            if(rollbackFor.isAssignableFrom(exception.getClass())){
+                                this.sendAndExecuteCancelOrderToMember(transaction);
+                            }
+                        }
                     }finally{
 
                     }
@@ -203,7 +233,7 @@ public class TransactionManager {
                     try {
                         transaction = propagationExistStart(transactionContext);
                         boolean asyncCancel = false;
-                        if ("true".equals(transaction.getAsyncConfirm())) {
+                        if (transaction.getAsyncConfirm()) {
                             asyncCancel = true;
                         }
                         rollback(transaction, asyncCancel);
@@ -225,12 +255,34 @@ public class TransactionManager {
     }
 
     /**
-     * 处理zk 事件
+     * 处理协调者 事件
      * @param groupId
      * @param status
      */
     public void process(String groupId,String status){
-        if(StringUtils.isEmpty(groupId)){
+        if(StringUtils.isEmpty(groupId) || StringUtils.isEmpty(status)){
+            log.error("TCC:group id is null or status is null{},{}",groupId,status);
+            return;
+        }
+        int _status = Integer.parseInt(status);
+        TransactionStatus transactionStatus=null;
+        switch (TransactionStatus.valueOf(_status)) {
+            case TRY:
+                break;
+            case CONFIRM:
+                transactionStatus=TransactionStatus.CONFIRM;
+                break;
+            case CANCEL:
+                transactionStatus=TransactionStatus.CANCEL;
+                break;
+            default:
+                break;
+        }
+        TransactionXid xid=new TransactionXid(groupId);
+        Transaction transaction=new Transaction(xid,transactionStatus);
+        boolean isExecute=judgeIdempotent(transaction);
+        if(isExecute){
+            log.debug("TCC:group id {} 已经执行过，为了保证幂等，不能重复执行。",groupId);
             return;
         }
         Future future= executorService.submit(new Runnable() {
@@ -239,18 +291,6 @@ public class TransactionManager {
                 syncProcess(groupId,status);
             }
         });
-        /*try {
-            futureEcutorService.submit(new Runnable() {
-                @Override
-                public void run() {
-                    CoordinatorWatcher.getInstance().processTransactionStart(future);
-                }
-            });
-
-        } catch (Exception e) {
-            log.error(e.getMessage(),e);
-        }*/
-
 
     }
 
@@ -258,10 +298,21 @@ public class TransactionManager {
      * 回滚事务by客户端
      * @throws Exception
      */
+    public void rollbackForClient(String groupId) throws Exception {
+        Transaction transaction =peekCache(groupId);
+        sendCancelOrderToMember(transaction);
+    }
+    /**
+     * 回滚事务by客户端
+     * @throws Exception
+     */
     public void rollbackForClient() throws Exception {
-       Transaction transaction =getCurrentTransaction();
-        transaction.changeStatus(TransactionStatus.CANCEL);
-        CoordinatorWatcher.getInstance().modify(transaction);
+        Transaction transaction =getCurrentTransaction();
+        sendCancelOrderToMember(transaction);
+    }
+
+    private boolean judgeIdempotent(Transaction transaction){
+        return transactionRepository.judgeIdempotent(transaction);
     }
 
     /**
@@ -280,7 +331,6 @@ public class TransactionManager {
         transactionRepository.update(transaction);*/
         if (asyncCommit) {
             try {
-                Long statTime = System.currentTimeMillis();
                 executorService.submit(new Runnable() {
                     @Override
                     public void run() {
@@ -375,14 +425,14 @@ public class TransactionManager {
      * @return
      */
     public Transaction getCurrentTransaction() {
-        if(CURRENT.get()!=null){
-            return CURRENT.get().peek();
+        if(currentThreadLoacl.get()!=null){
+            return currentThreadLoacl.get().peek();
         }
        return null;
     }
 
     public boolean isTransactionActive() {
-        Deque<Transaction> transactions = CURRENT.get();
+        Deque<Transaction> transactions = currentThreadLoacl.get();
         return transactions != null && !transactions.isEmpty();
     }
 
@@ -391,12 +441,10 @@ public class TransactionManager {
      * @param transaction
      */
     private void registerTransaction(Transaction transaction) {
-
-        if (CURRENT.get() == null) {
-            CURRENT.set(new LinkedList<Transaction>());
+        if (currentThreadLoacl.get() == null) {
+            currentThreadLoacl.set(new LinkedList<Transaction>());
         }
-        CURRENT.get().push(transaction);
-
+        currentThreadLoacl.get().push(transaction);
     }
 
     public void registerTransactionTrace(Transaction transaction) {
@@ -411,12 +459,6 @@ public class TransactionManager {
     public void cleanAfterConfirm(Transaction transaction) {
         clean(transaction);
         delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
-        try {
-            //CoordinatorWatcher.getInstance().deleteDataNodeForConfirm(transaction);
-        } catch (Exception e) {
-            log.error(e.getMessage(),e);
-        }
-
     }
 
     /**
@@ -427,9 +469,9 @@ public class TransactionManager {
         if (isTransactionActive() && transaction != null) {
             Transaction currentTransaction = getCurrentTransaction();
             if (currentTransaction == transaction) {
-                CURRENT.get().pop();
-                if (CURRENT.get().size() == 0) {
-                    CURRENT.remove();
+                currentThreadLoacl.get().pop();
+                if (currentThreadLoacl.get().size() == 0) {
+                    currentThreadLoacl.remove();
                 }
             } else {
                 throw new TccSystemErrorException("本地线程变量异常！");
@@ -444,12 +486,6 @@ public class TransactionManager {
     public void cleanAfterCancel(Transaction transaction) {
         clean(transaction);
         delCache(transaction.getTransactionXid().getGlobalTccTransactionId());
-        try {
-            //CoordinatorWatcher.getInstance().deleteDataNode(transaction);
-        } catch (Exception e) {
-            log.error(e.getMessage(),e);
-        }
-
     }
 
     /**
@@ -463,44 +499,40 @@ public class TransactionManager {
     }
 
     public void saveConfirmOrder(Transaction transaction) throws Exception{
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                transaction.changeStatus(TransactionStatus.CONFIRM);
-                transactionRepository.update(transaction);
-            }
-        });
+        transaction.changeStatus(TransactionStatus.CONFIRM);
+        transactionRepository.update(transaction);
     }
     public void sendConfirmOrderToMember(Transaction transaction) throws Exception{
-        transaction.changeStatus(TransactionStatus.CONFIRM);
-        CoordinatorWatcher.getInstance().modify(transaction);
+        //如果主调用方已经取消，则向协调者发出取消指令
+        if(peekCancelCache(transaction)!=null){
+            saveConfirmOrder(transaction);
+            executeCancelOrderToMember(transaction);
+            return;
+        }
+        //如果给子系统取消，则向协调者发出取消指令，否则执行Confirm
+        if(!transactionRepository.isCanceling(transaction)){
+            saveConfirmOrder(transaction);
+            transaction.changeStatus(TransactionStatus.CONFIRM);
+            CoordinatorWatcher.getInstance().modify(transaction);
+        }else {
+            executeCancelOrderToMember(transaction);
+        }
 
     }
 
     public void sendCancelOrderToMember(Transaction transaction) throws Exception{
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                transactionRepository.createGroupMemberForCancel(transaction);
-            }
-        });
+        transactionRepository.createGroupMemberForCancel(transaction);
+    }
+
+    public void executeCancelOrderToMember(Transaction transaction) throws Exception{
         transaction.changeStatus(TransactionStatus.CANCEL);
         CoordinatorWatcher.getInstance().modify(transaction);
-
+    }
+    public void sendAndExecuteCancelOrderToMember(Transaction transaction) throws Exception{
+        sendCancelOrderToMember(transaction);
+        executeCancelOrderToMember(transaction);
     }
 
-    /**
-     * 添加参与者
-     * @param transaction
-     * @throws Exception
-     */
-    public void addGroupForMember(Transaction transaction) throws Exception{
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                transactionRepository.createGroupMember(transaction);
-            }
-        });
-        //CoordinatorWatcher.getInstance().add(transaction);
-    }
+
+
 }

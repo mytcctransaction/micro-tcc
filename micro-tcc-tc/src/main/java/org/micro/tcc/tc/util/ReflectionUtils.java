@@ -1,8 +1,8 @@
-package org.micro.tcc.common.util;
+package org.micro.tcc.tc.util;
 
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.micro.tcc.common.annotation.TccTransaction;
+import org.micro.tcc.tc.annotation.TccTransaction;
 
 import java.lang.reflect.Method;
 

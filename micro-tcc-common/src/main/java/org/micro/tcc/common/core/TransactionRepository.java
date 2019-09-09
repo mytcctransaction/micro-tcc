@@ -13,15 +13,21 @@ public interface TransactionRepository {
 
     boolean create(Transaction transaction);
 
+    boolean createGroupMemberForClientCancel(Transaction transaction);
+
     boolean createGroupMemberForCancel(Transaction transaction);
 
     boolean createGroupMember(Transaction transaction);
+
+    boolean isCanceling(Transaction transaction);
 
     boolean update(Transaction transaction);
 
     boolean updateGroupTransaction(Transaction transaction);
 
     boolean delete(Transaction transaction);
+
+    boolean judgeIdempotent(Transaction transaction);
 
     boolean deleteGroup(Transaction transaction);
 

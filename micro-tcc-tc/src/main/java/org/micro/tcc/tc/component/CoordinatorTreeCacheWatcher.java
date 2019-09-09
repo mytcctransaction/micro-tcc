@@ -14,18 +14,14 @@ import org.apache.curator.utils.ZKPaths;
 import org.apache.zookeeper.CreateMode;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.constant.TransactionType;
-import org.micro.tcc.common.core.TccTransactionContext;
 import org.micro.tcc.common.core.Transaction;
 import org.micro.tcc.common.constant.TransactionStatus;
-import org.micro.tcc.common.core.TransactionXid;
-import org.micro.tcc.common.exception.NoExistedTransactionException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -176,7 +172,7 @@ public class CoordinatorTreeCacheWatcher implements ApplicationRunner {
                             break;
                     }
                 }else{
-                    log.debug( "TCC:zk node data : "+ JSON.toJSONString(event));
+                    log.debug( "TCC: node data : "+ JSON.toJSONString(event));
                 }
             }
         },pool);

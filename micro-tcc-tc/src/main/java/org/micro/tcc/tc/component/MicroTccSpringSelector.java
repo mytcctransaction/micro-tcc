@@ -1,6 +1,7 @@
 package org.micro.tcc.tc.component;
 
 import lombok.extern.slf4j.Slf4j;
+import org.micro.tcc.tc.annotation.EnableMicroTccTransaction;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -21,8 +22,7 @@ public class MicroTccSpringSelector implements ImportSelector, BeanFactoryAware 
 
     @Override
     public String[] selectImports(AnnotationMetadata importingClassMetadata) {
-        //importingClassMetadata.getAnnotationTypes().forEach(System.out::println);
-        //System.out.println(beanFactory);
+
         boolean isEnable = importingClassMetadata.getAnnotationAttributes(EnableMicroTccTransaction.class.getName()).isEmpty();
 
         List<String> importClasses = new ArrayList<>();

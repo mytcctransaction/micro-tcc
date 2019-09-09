@@ -9,7 +9,6 @@ import com.alibaba.dubbo.rpc.Invoker;
 import com.alibaba.dubbo.rpc.Result;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.fastjson.JSONObject;
 import lombok.extern.slf4j.Slf4j;
 import org.micro.tcc.common.constant.Constant;
 import org.micro.tcc.common.core.Transaction;
@@ -30,7 +29,7 @@ public class DubboConsumerContextFilter implements Filter {
         log.debug("TCC: Consumer filter ");
         Map<String, String> context = new HashMap<>();
         //处理group id
-        Transaction transaction=TransactionManager.getInstance().getCurrentTransaction();
+        Transaction transaction= TransactionManager.getInstance().getCurrentTransaction();
         if(null==transaction)return invoker.invoke(invocation);
 
         String groupId=transaction.getTransactionXid().getGlobalTccTransactionId();
