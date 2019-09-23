@@ -29,7 +29,7 @@ public class Transaction implements Serializable {
 
     private int model= Model.AT.value();
 
-    private Class rollbackFor=Throwable.class;
+    private Class<? extends Throwable>[] rollbackFor= new Class[]{Throwable.class};
 
 
     /**
@@ -103,11 +103,11 @@ public class Transaction implements Serializable {
     }
 
 
-    public Class getRollbackFor() {
+    public Class<? extends Throwable>[] getRollbackFor() {
         return rollbackFor;
     }
 
-    public void setRollbackFor(Class rollbackFor) {
+    public void setRollbackFor(Class<? extends Throwable>[] rollbackFor) {
         this.rollbackFor = rollbackFor;
     }
     public void setModel(int model) {
@@ -148,14 +148,18 @@ public class Transaction implements Serializable {
         this.status = status;
     }
 
-
+    /**
+     * 提交事务
+     */
     public void commit() {
-
         for (TransactionMember participant : participants) {
             participant.commit();
         }
     }
 
+    /**
+     * 回滚事务
+     */
     public void rollback() {
         for (TransactionMember participant : participants) {
             participant.rollback();

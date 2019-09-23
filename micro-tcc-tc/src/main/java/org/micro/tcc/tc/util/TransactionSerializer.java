@@ -60,4 +60,5 @@ public class TransactionSerializer {
         transaction.setVersion(ByteUtils.bytesToLong(propertyMap.get("version")));
         return transaction;
     }
+
 }

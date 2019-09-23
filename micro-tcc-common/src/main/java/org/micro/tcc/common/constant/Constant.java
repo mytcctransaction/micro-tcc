@@ -36,6 +36,14 @@ public  class  Constant {
 
     public final static String DELIMIT="#";
 
+    public static String IDEMPOTENT;
+
+    public static String IDEMPOTENT_TRUE="true";
+
+    public static long DELAY=50;
+
+    public static long PERIOD=10;
+
     public static String getAppName(){
         return transactionMapKey;
     }
@@ -53,5 +61,10 @@ public  class  Constant {
     @Value("${spring.application.name}")
     public void setTransactionMapKey(String transactionMapKey) {
         Constant.transactionMapKey = transactionMapKey;
+    }
+
+    @Value("${micro.tcc.idempotent:true}")
+    public void setIdempotent(String idempotent) {
+        Constant.IDEMPOTENT = idempotent;
     }
 }

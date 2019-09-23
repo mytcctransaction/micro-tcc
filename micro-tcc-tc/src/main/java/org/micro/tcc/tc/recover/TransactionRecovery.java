@@ -67,13 +67,13 @@ public class TransactionRecovery {
                 transaction.addRetriedCount();
                 if (transaction.getStatus().equals(TransactionStatus.CONFIRM)) {
                     //transaction.changeStatus(TransactionStatus.CONFIRM);
-                    transactionRepository.update(transaction);
+                    //transactionRepository.update(transaction);
                     transaction.commit();
                     transactionRepository.delete(transaction);
 
                 } else if (transaction.getStatus().equals(TransactionStatus.CANCEL)) {
                     //transaction.changeStatus(TransactionStatus.CANCEL);
-                    transactionRepository.update(transaction);
+                    //transactionRepository.update(transaction);
                     transaction.rollback();
                     transactionRepository.delete(transaction);
                 }

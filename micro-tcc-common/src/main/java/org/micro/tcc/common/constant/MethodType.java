@@ -7,8 +7,12 @@ package org.micro.tcc.common.constant;
 *@date 2019/8/27
 */
 public enum MethodType {
+
     ROOT,
+
     CONSUMER,
+
     PROVIDER,
+
     NORMAL;
 }

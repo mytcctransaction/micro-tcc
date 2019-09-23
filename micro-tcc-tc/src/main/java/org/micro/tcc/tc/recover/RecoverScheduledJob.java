@@ -50,7 +50,7 @@ public class RecoverScheduledJob implements ApplicationRunner {
             scheduler=schedulerfactory.getScheduler();
             scheduler.scheduleJob(jobDetail.getObject(), cronTrigger.getObject());
             scheduler.start();
-            log.info("TCC:开启分布式事务定时恢复任务");
+            log.debug("TCC:开启分布式事务定时恢复任务");
 
         } catch (Exception e) {
             log.error("TCC:定时commit/cancel事务发生异常！",e);
